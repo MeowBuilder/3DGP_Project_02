@@ -2,6 +2,7 @@
 #include "stdafx.h"
 #include "Timer.h"
 #include "Scene.h"
+#include "StartScene.h"
 #include "Camera.h"
 #include "Player.h"
 
