@@ -78,6 +78,7 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera);
 	virtual CGameObject* PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float* pfNearHitDistance);
 	virtual CGameObject* CheckFinish();
+	virtual  bool RailEnded() { return m_bRailEnded; }
 
 	virtual XMFLOAT3 GetStartPosition() {
 		return XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -85,6 +86,8 @@ public:
 protected:
 	CGameObject** m_ppObjects = NULL; 
 	int m_nObjects = 0;
+
+	bool m_bRailEnded = false;
 };
 
 // ¿ŒΩ∫≈œΩ∫ ºŒ¿Ã¥ı ∞¥√º

@@ -29,10 +29,9 @@ void CLevel1::AnimateObjects(float fTimeElapsed) {
 
 		m_pShaders[i].AnimatePlayerOnRail(m_pPlayer, fTimeElapsed);
 
-		m_EndObject = m_pShaders[i].CheckFinish();
-		if (m_EndObject != NULL && m_EndObject->GetTargetSceneID() != -1)
+		if (m_pShaders[i].RailEnded())
 		{
-			SetNextSceneID(m_EndObject->GetTargetSceneID());
+			SetNextSceneID(0);
 			SetFinish(true);
 		}
 	}

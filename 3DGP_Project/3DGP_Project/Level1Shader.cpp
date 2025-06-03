@@ -105,8 +105,6 @@ void CLevel1Shader::AnimatePlayerOnRail(CPlayer* pPlayer,float fTimeElapsed) {
         if (m_nCurrentRailIndex >= m_RailSegments.size())
         {
             m_bRailEnded = true;
-            //m_nNextSceneID = 3;
-            //m_bSceneFinished = true;
             m_nCurrentRailIndex = 0;
             return;
         }
@@ -115,50 +113,9 @@ void CLevel1Shader::AnimatePlayerOnRail(CPlayer* pPlayer,float fTimeElapsed) {
     const RailSegment& seg0 = m_RailSegments[m_nCurrentRailIndex];
     const RailSegment& seg1 = m_RailSegments[(m_nCurrentRailIndex + 1) % m_RailSegments.size()];
 
-    OutputDebugStringA("UpdatePlayerOnRail 호출됨\n");
-
-    // 플레이어 이동 (보간)
+    // 1. 플레이어 위치 보간
     XMFLOAT3 pos = Vector3::Lerp(seg0.position, seg1.position, m_fRailProgress);
     pPlayer->SetPosition(pos);
 
-    char buf[128];
-    sprintf_s(buf, "플레이어 위치: %.2f %.2f %.2f\n", pos.x, pos.y, pos.z);
-    OutputDebugStringA(buf);
-
-    // ----------------------------
-    // 2. 플레이어 방향 보간
-    // ----------------------------
-    XMFLOAT3 railDirection = seg0.tangent;
-    railDirection = Vector3::Normalize(railDirection);
-
-    XMFLOAT3 currentLook = pPlayer->GetLook();
-    XMFLOAT3 newLook = Vector3::Lerp(currentLook, railDirection, fRotateLerpSpeed * fTimeElapsed);
-    newLook = Vector3::Normalize(newLook);
-
-    XMFLOAT3 worldUp = XMFLOAT3(0.0f, 1.0f, 0.0f);
-    XMFLOAT3 newRight = Vector3::Normalize(Vector3::CrossProduct(worldUp, newLook));
-    XMFLOAT3 newUp = Vector3::Normalize(Vector3::CrossProduct(newLook, newRight));
-
-    pPlayer->SetOrientation(newRight, newUp, newLook);
-
-    // ----------------------------
-    // 3. 카메라 위치를 '플레이어 뒤쪽'으로 재설정
-    // ----------------------------
-    XMFLOAT3 playerPos = pPlayer->GetPosition();
-    XMFLOAT3 playerLook = pPlayer->GetLook();
-    XMFLOAT3 playerUp = pPlayer->GetUp();
-    XMFLOAT3 playerRight = pPlayer->GetRight();
-
-    XMFLOAT3 offset = Vector3::Add(
-        Vector3::ScalarProduct(playerUp, 30.0f, false),
-        Vector3::ScalarProduct(playerLook, -30.0f, false)
-    );
-
-    XMFLOAT3 camPos = Vector3::Add(playerPos, offset);
-
-    pPlayer->GetCamera()->SetLookAt(camPos, playerPos, playerUp);
-    pPlayer->GetCamera()->GenerateViewMatrix();
-
     pPlayer->Animate(fTimeElapsed);
-
 }

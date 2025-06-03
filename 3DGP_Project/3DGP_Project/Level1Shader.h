@@ -26,8 +26,6 @@ private:
 	std::vector<RailSegment> m_RailSegments;
 	std::vector<CRailObject*> m_pRailObjects;
 
-	bool m_bRailEnded = false;
-
 	int m_nCurrentRailIndex = 0;
 	float m_fRailProgress = 0.0f;
 	float speed = 5.0f;

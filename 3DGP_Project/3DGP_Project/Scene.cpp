@@ -94,7 +94,7 @@ void CScene::AnimateObjects(float fTimeElapsed)
 		m_pShaders[i].AnimateObjects(fTimeElapsed);
 
 		m_EndObject = m_pShaders[i].CheckFinish();
-		if (m_EndObject != NULL && m_EndObject->GetTargetSceneID() != -1)
+		if (m_EndObject != NULL)
 		{
 			SetNextSceneID(m_EndObject->GetTargetSceneID());
 			SetFinish(true);

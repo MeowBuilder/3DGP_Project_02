@@ -15,6 +15,7 @@
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
+#include <algorithm>
 
 #include <vector>
 #include <string>

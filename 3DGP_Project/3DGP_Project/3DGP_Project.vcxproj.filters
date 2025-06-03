@@ -96,11 +96,11 @@
     <ClInclude Include="3DGP_Project.h">
       <Filter>헤더 파일\Framework</Filter>
     </ClInclude>
-    <ClInclude Include="Level1.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Level1Shader.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>헤더 파일\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Level1.h">
+      <Filter>헤더 파일\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -155,11 +155,11 @@
     <ClCompile Include="Timer.cpp">
       <Filter>소스 파일\Framework</Filter>
     </ClCompile>
-    <ClCompile Include="Level1.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Level1Shader.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>소스 파일\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="Level1.cpp">
+      <Filter>소스 파일\Scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

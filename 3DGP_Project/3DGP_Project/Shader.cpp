@@ -333,7 +333,7 @@ CGameObject* CObjectsShader::CheckFinish() {
 	{
 		if (m_ppObjects[i]->GetActive() == false && m_ppObjects[i]->GetExplosive() != NULL)
 		{
-			if (m_ppObjects[i]->GetExplosive()->IsFinished())
+			if (m_ppObjects[i]->GetExplosive()->IsFinished() && m_ppObjects[i]->GetTargetSceneID() != -1)
 			{
 				return m_ppObjects[i];
 			}
