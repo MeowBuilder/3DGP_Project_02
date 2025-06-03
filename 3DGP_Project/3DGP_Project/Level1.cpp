@@ -15,19 +15,25 @@ void CLevel1::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* 
 	m_pShaders = new CLevel1Shader[m_nShaders];
 	m_pShaders[0].CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	m_pShaders[0].BuildObjects(pd3dDevice, pd3dCommandList);
+
+	CAirplanePlayer* pAirplanePlayer = new CAirplanePlayer(pd3dDevice, pd3dCommandList, GetGraphicsRootSignature());
+	m_pPlayer = pAirplanePlayer;
+	m_pPlayer->SetPosition(XMFLOAT3(0,0,0));
+	m_pCamera = m_pPlayer->GetCamera();
 }
 
-bool CLevel1::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
-{
-	return(false);
-}
+void CLevel1::AnimateObjects(float fTimeElapsed) {
+	for (int i = 0; i < m_nShaders; i++)
+	{
+		m_pShaders[i].AnimateObjects(fTimeElapsed);
 
-bool CLevel1::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
-{
-	return(false);
-}
+		m_pShaders[i].AnimatePlayerOnRail(m_pPlayer, fTimeElapsed);
 
-bool CLevel1::ProcessInput(UCHAR* pKeysBuffer)
-{
-	return(false);
+		m_EndObject = m_pShaders[i].CheckFinish();
+		if (m_EndObject != NULL && m_EndObject->GetTargetSceneID() != -1)
+		{
+			SetNextSceneID(m_EndObject->GetTargetSceneID());
+			SetFinish(true);
+		}
+	}
 }

@@ -43,6 +43,13 @@ void CPlayer::UpdateShaderVariables(ID3D12GraphicsCommandList* pd3dCommandList)
 	CGameObject::UpdateShaderVariables(pd3dCommandList);
 }
 
+void CPlayer::SetOrientation(const XMFLOAT3& right, const XMFLOAT3& up, const XMFLOAT3& look)
+{
+	m_xmf3Right = right;
+	m_xmf3Up = up;
+	m_xmf3Look = look;
+}
+
 void CPlayer::Move(DWORD dwDirection, float fDistance, bool bUpdateVelocity)
 {
 	if (dwDirection)

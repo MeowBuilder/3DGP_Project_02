@@ -61,6 +61,8 @@ public:
 		Move(XMFLOAT3(xmf3Position.x - m_xmf3Position.x, xmf3Position.y - m_xmf3Position.y, xmf3Position.z - m_xmf3Position.z), false);
 	}
 
+	void SetOrientation(const XMFLOAT3& right, const XMFLOAT3& up, const XMFLOAT3& look);
+
 	XMFLOAT3& GetVelocity() { return(m_xmf3Velocity); }
 	float GetYaw() { return(m_fYaw); }
 	float GetPitch() { return(m_fPitch); }

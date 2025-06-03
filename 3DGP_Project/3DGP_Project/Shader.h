@@ -68,6 +68,7 @@ public:
 	virtual ~CObjectsShader();
 	virtual void BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList);
 	virtual void AnimateObjects(float fTimeElapsed);
+	virtual void AnimatePlayerOnRail(CPlayer* pPlayer, float fElapsedTime) {};
 	virtual void ReleaseObjects();
 	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader(ID3DBlob** ppd3dShaderBlob);
@@ -77,8 +78,12 @@ public:
 	virtual void Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera);
 	virtual CGameObject* PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float* pfNearHitDistance);
 	virtual CGameObject* CheckFinish();
+
+	virtual XMFLOAT3 GetStartPosition() {
+		return XMFLOAT3(0.0f, 0.0f, 0.0f);
+	}
 protected:
-	CGameObject** m_ppObjects = NULL;
+	CGameObject** m_ppObjects = NULL; 
 	int m_nObjects = 0;
 };
 

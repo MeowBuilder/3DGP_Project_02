@@ -63,6 +63,27 @@ extern ID3D12Resource* CreateBufferResource(ID3D12Device* pd3dDevice, ID3D12Grap
 //3차원 벡터의 연산
 namespace Vector3
 {
+	inline XMFLOAT3 CatmullRom(const XMFLOAT3& p0, const XMFLOAT3& p1, const XMFLOAT3& p2, const XMFLOAT3& p3, float t)
+	{
+		XMVECTOR v0, v1, v2, v3;
+		v0 = XMLoadFloat3(&p0);
+		v1 = XMLoadFloat3(&p1);
+		v2 = XMLoadFloat3(&p2);
+		v3 = XMLoadFloat3(&p3);
+		XMFLOAT3 xmf3Result;
+
+		XMStoreFloat3(&xmf3Result, XMVectorCatmullRom(v0, v1, v2, v3, t));
+
+		return xmf3Result;
+	}
+
+	inline XMFLOAT3 Lerp(const XMFLOAT3& a, const XMFLOAT3& b, float t)
+	{
+		XMFLOAT3 xmf3Result;
+		XMStoreFloat3(&xmf3Result, XMVectorLerp(XMLoadFloat3(&a), XMLoadFloat3(&b), t));
+		return xmf3Result;
+	}
+
 	inline XMFLOAT3 XMVectorToFloat3(XMVECTOR& xmvVector)
 	{
 		XMFLOAT3 xmf3Result;

@@ -61,6 +61,7 @@ public:
 	XMFLOAT3 GetRight();
 
 	XMFLOAT4X4 GetWorldMAT() { return m_xmf4x4World; };
+	void LookTo(XMFLOAT3& lookDirection, XMFLOAT3& upDirection);
 
 	//게임 객체의 위치를 설정한다. 
 	void SetPosition(float x, float y, float z);
@@ -131,4 +132,15 @@ private:
 	XMFLOAT3 m_vDirection[EXPLOSION_DEBRIS];
 
 	static CMesh* m_pExplosionMesh;
+};
+
+class CRailObject : public CGameObject
+{
+public:
+	CRailObject(CMesh* pMesh)
+	{
+		SetMesh(pMesh);
+	}
+
+	virtual ~CRailObject() {}
 };

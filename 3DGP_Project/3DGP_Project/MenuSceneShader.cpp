@@ -22,7 +22,7 @@ void CMenuSceneShader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsComm
 	pText2->SetPosition(-40.0f, 5.0f, textZpos);
 	pText2->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 0.0f));
 	pText2->SetRotationSpeed(10.0f);
-	pText1->SetTargetSceneID(2);
+	pText2->SetTargetSceneID(2);
 	m_ppObjects[1] = pText2;
 
 	// LEVEL-2 (오른쪽 아래)
@@ -30,7 +30,7 @@ void CMenuSceneShader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsComm
 	pText3->SetPosition(40.0f, 5.0f, textZpos);
 	pText3->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 0.0f));
 	pText3->SetRotationSpeed(10.0f);
-	pText1->SetTargetSceneID(3);
+	pText3->SetTargetSceneID(3);
 	m_ppObjects[2] = pText3;
 
 	// START (왼쪽 맨 아래)
@@ -38,7 +38,7 @@ void CMenuSceneShader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsComm
 	pText4->SetPosition(-40.0f, -20.0f, textZpos);
 	pText4->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 0.0f));
 	pText4->SetRotationSpeed(10.0f);
-	pText1->SetTargetSceneID(2);
+	pText4->SetTargetSceneID(2);
 	m_ppObjects[3] = pText4;
 
 	// END (오른쪽 맨 아래)

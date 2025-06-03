@@ -62,6 +62,16 @@ void CGameObject::Animate(float fTimeElapsed, const XMFLOAT4X4& parentWorld)
 	XMStoreFloat4x4(&m_xmf4x4World, xmWorld);
 }
 
+void CGameObject::LookTo(XMFLOAT3& lookDirection, XMFLOAT3& upDirection)
+{
+	XMFLOAT3 zAxis = Vector3::Normalize(lookDirection);
+	XMFLOAT3 xAxis = Vector3::Normalize(Vector3::CrossProduct(upDirection, zAxis));
+	XMFLOAT3 yAxis = Vector3::CrossProduct(zAxis, xAxis);
+
+	m_xmf4x4World._11 = xAxis.x; m_xmf4x4World._12 = xAxis.y; m_xmf4x4World._13 = xAxis.z;
+	m_xmf4x4World._21 = yAxis.x; m_xmf4x4World._22 = yAxis.y; m_xmf4x4World._23 = yAxis.z;
+	m_xmf4x4World._31 = zAxis.x; m_xmf4x4World._32 = zAxis.y; m_xmf4x4World._33 = zAxis.z;
+}
 
 void CGameObject::OnPrepareRender()
 {
