@@ -57,8 +57,7 @@ ID3D12RootSignature* CScene::GetGraphicsRootSignature()
 	return(m_pd3dGraphicsRootSignature);
 }
 
-void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList
-	* pd3dCommandList)
+void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList)
 {
 	m_pd3dGraphicsRootSignature = CreateGraphicsRootSignature(pd3dDevice);
 	m_nShaders = 1;
@@ -88,6 +87,13 @@ void CScene::AnimateObjects(float fTimeElapsed)
 	for (int i = 0; i < m_nShaders; i++)
 	{
 		m_pShaders[i].AnimateObjects(fTimeElapsed);
+
+		m_EndObject = m_pShaders[i].CheckFinish();
+		if (m_EndObject != NULL && m_EndObject->GetTargetSceneID() != -1)
+		{
+			SetNextSceneID(m_EndObject->GetTargetSceneID());
+			SetFinish(true);
+		}
 	}
 }
 
@@ -119,8 +125,7 @@ void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera
 	}
 }
 
-CGameObject* CScene::PickObjectPointedByCursor(int xClient, int yClient, CCamera
-	* pCamera)
+CGameObject* CScene::PickObjectPointedByCursor(int xClient, int yClient, CCamera* pCamera)
 {
 	if (!pCamera) return(NULL);
 	XMFLOAT4X4 xmf4x4View = pCamera->GetViewMatrix();

@@ -3,6 +3,7 @@
 #include "Camera.h"
 
 class CShader;
+class CExplosiveObject;
 
 class CGameObject
 {
@@ -17,14 +18,31 @@ public:
 	void AddRef() { m_nReferences++; }
 	void Release() { if (--m_nReferences <= 0) delete this; }
 protected:
+	bool m_bActive = true;
+
 	XMFLOAT4X4 m_xmf4x4World;
+	XMFLOAT4X4 m_xmf4x4Transform; // 로컬 변환
 	CMesh* m_pMesh = NULL;
 	CShader* m_pShader = NULL;
+
+	int m_nTargetSceneID = -1; // 피킹 되었을 때 넘겨줄 씬 ID
+	CExplosiveObject* m_childExplosive;
 public:
+	void SetActive(bool bActive) { m_bActive = bActive; }
+	bool GetActive() { return m_bActive; }
+
+	void SetTargetSceneID(int nSceneID) { m_nTargetSceneID = nSceneID; } // 씬 ID 설정
+	int GetTargetSceneID() const { return m_nTargetSceneID; } // 씬 ID 반환
+
+	void SetExplosive(CExplosiveObject* child) { m_childExplosive = child; }
+	CExplosiveObject* GetExplosive() { return m_childExplosive; }
+	void Explosion();
+
 	void ReleaseUploadBuffers();
 	virtual void SetMesh(CMesh* pMesh);
 	virtual void SetShader(CShader* pShader);
 	virtual void Animate(float fTimeElapsed);
+	virtual void Animate(float fTimeElapsed, const XMFLOAT4X4& parentWorld);
 	virtual void OnPrepareRender();
 	virtual void Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera);
 	virtual void Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera, UINT nInstances);
@@ -48,6 +66,10 @@ public:
 	void SetPosition(float x, float y, float z);
 	void SetPosition(XMFLOAT3 xmf3Position);
 
+	//게임 객체의 위치를 설정한다. 
+	void SetOffset(float x, float y, float z);
+	void SetOffset(XMFLOAT3 xmf3Position);
+
 	//게임 객체를 로컬 x-축, y-축, z-축 방향으로 이동한다.
 	void MoveStrafe(float fDistance = 1.0f);
 	void MoveUp(float fDistance = 1.0f);
@@ -60,7 +82,7 @@ public:
 
 	void GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, XMFLOAT3* pxmf3PickRayOrigin, XMFLOAT3* pxmf3PickRayDirection);
 
-	int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float* pfHitDistance);
+	virtual int PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float* pfHitDistance);
 };
 
 class CRotatingObject : public CGameObject
@@ -78,4 +100,35 @@ public:
 			xmf3RotationAxis;
 	}
 	virtual void Animate(float fTimeElapsed);
+};
+
+#define EXPLOSION_DEBRIS 255
+
+class CExplosiveObject : public CGameObject
+{
+public:
+	CExplosiveObject(CMesh* pMesh);
+	virtual ~CExplosiveObject();
+
+	void Init(CGameObject* pFromObject);
+
+	virtual void Animate(float fElapsedTime) override;
+	virtual void Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera) override;
+
+	void StartExplosion();
+	bool IsFinished() const { return m_bBlowEnd; }
+private:
+	std::vector<CGameObject*> m_DebrisObjects;
+
+	bool m_bBlowingUp = false;
+	bool m_bBlowEnd = false;
+	float m_fElapsedTime = 0.0f;
+	float m_fDuration = 2.0f;
+
+	float m_fExplosionSpeed = 10.0f;
+	float m_fExplosionRotation = 720.0f;
+
+	XMFLOAT3 m_vDirection[EXPLOSION_DEBRIS];
+
+	static CMesh* m_pExplosionMesh;
 };

@@ -4,6 +4,7 @@
 CGameObject::CGameObject()
 {
 	XMStoreFloat4x4(&m_xmf4x4World, XMMatrixIdentity());
+	XMStoreFloat4x4(&m_xmf4x4Transform, XMMatrixIdentity());
 }
 
 CGameObject::~CGameObject()
@@ -13,6 +14,14 @@ CGameObject::~CGameObject()
 	{
 		m_pShader->ReleaseShaderVariables();
 		m_pShader->Release();
+	}
+}
+
+void CGameObject::Explosion() {
+	if (m_childExplosive)
+	{
+		m_childExplosive->StartExplosion();
+		m_bActive = false;
 	}
 }
 
@@ -44,6 +53,15 @@ void CGameObject::ReleaseUploadBuffers()
 void CGameObject::Animate(float fTimeElapsed)
 {
 }
+
+void CGameObject::Animate(float fTimeElapsed, const XMFLOAT4X4& parentWorld)
+{
+	XMMATRIX xmParent = XMLoadFloat4x4(&parentWorld);
+	XMMATRIX xmLocal = XMLoadFloat4x4(&m_xmf4x4Transform);
+	XMMATRIX xmWorld = XMMatrixMultiply(xmLocal, xmParent);
+	XMStoreFloat4x4(&m_xmf4x4World, xmWorld);
+}
+
 
 void CGameObject::OnPrepareRender()
 {
@@ -99,6 +117,18 @@ void CGameObject::SetPosition(float x, float y, float z)
 }
 
 void CGameObject::SetPosition(XMFLOAT3 xmf3Position)
+{
+	SetPosition(xmf3Position.x, xmf3Position.y, xmf3Position.z);
+}
+
+void CGameObject::SetOffset(float x, float y, float z)
+{
+	m_xmf4x4Transform._41 = x;
+	m_xmf4x4Transform._42 = y;
+	m_xmf4x4Transform._43 = z;
+}
+
+void CGameObject::SetOffset(XMFLOAT3 xmf3Position)
 {
 	SetPosition(xmf3Position.x, xmf3Position.y, xmf3Position.z);
 }
@@ -173,7 +203,7 @@ bool CGameObject::IsVisible(CCamera* pCamera)
 	return(bIsVisible);
 }
 
-void CGameObject::GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4&
+void CGameObject::GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& 
 	xmf4x4View, XMFLOAT3* pxmf3PickRayOrigin, XMFLOAT3* pxmf3PickRayDirection)
 {
 	XMFLOAT4X4 xmf4x4WorldView = Matrix4x4::Multiply(m_xmf4x4World, xmf4x4View);
@@ -208,4 +238,91 @@ CRotatingObject::~CRotatingObject()
 void CRotatingObject::Animate(float fTimeElapsed)
 {
 	CGameObject::Rotate(&m_xmf3RotationAxis, m_fRotationSpeed * fTimeElapsed);
+}
+
+inline float RandF(float fMin, float fMax)
+{
+	return(fMin + ((float)rand() / (float)RAND_MAX) * (fMax - fMin));
+}
+
+XMVECTOR RandomUnitVectorOnSphere()
+{
+	XMVECTOR xmvOne = XMVectorSet(1.0f, 1.0f, 1.0f, 1.0f);
+	XMVECTOR xmvZero = XMVectorZero();
+
+	while (true)
+	{
+		XMVECTOR v = XMVectorSet(RandF(-1.0f, 1.0f), RandF(-1.0f, 1.0f), RandF(-1.0f, 1.0f), 0.0f);
+		if (!XMVector3Greater(XMVector3LengthSq(v), xmvOne)) return(XMVector3Normalize(v));
+	}
+}
+
+
+CExplosiveObject::CExplosiveObject(CMesh* pMesh)
+{
+	for (int i = 0; i < EXPLOSION_DEBRIS; ++i)
+	{
+		auto* debris = new CGameObject();
+		debris->SetMesh(pMesh);
+		m_DebrisObjects.push_back(debris);
+
+		XMStoreFloat3(&m_vDirection[i], RandomUnitVectorOnSphere());
+	}
+}
+
+CExplosiveObject::~CExplosiveObject()
+{
+	for (auto obj : m_DebrisObjects) delete obj;
+	m_DebrisObjects.clear();
+}
+
+void CExplosiveObject::Init(CGameObject* pFromObject)
+{
+	XMFLOAT3 origin = pFromObject->GetPosition();
+	for (int i = 0; i < EXPLOSION_DEBRIS; ++i)
+	{
+		m_DebrisObjects[i]->SetPosition(origin);
+	}
+	m_fElapsedTime = 0.0f;
+	m_bBlowingUp = false;
+}
+
+void CExplosiveObject::StartExplosion()
+{
+	m_fElapsedTime = 0.0f;
+	m_bBlowingUp = true;
+}
+
+void CExplosiveObject::Animate(float fElapsedTime)
+{
+	if (!m_bBlowingUp) return;
+
+	m_fElapsedTime += fElapsedTime;
+
+	if (m_fElapsedTime > m_fDuration)
+	{
+		m_bBlowingUp = false;
+		m_bBlowEnd = true;
+		return;
+	}
+
+	for (int i = 0; i < EXPLOSION_DEBRIS; ++i)
+	{
+		XMFLOAT3 dir = m_vDirection[i];
+		XMFLOAT3 pos = m_DebrisObjects[i]->GetPosition();
+		pos.x += dir.x * m_fExplosionSpeed * fElapsedTime;
+		pos.y += dir.y * m_fExplosionSpeed * fElapsedTime;
+		pos.z += dir.z * m_fExplosionSpeed * fElapsedTime;
+		m_DebrisObjects[i]->SetPosition(pos);
+
+		m_DebrisObjects[i]->Rotate(&dir, m_fExplosionRotation * fElapsedTime);
+	}
+}
+
+void CExplosiveObject::Render(ID3D12GraphicsCommandList* cmdList, CCamera* pCamera)
+{
+	if (!m_bBlowingUp) return;
+
+	for (auto& obj : m_DebrisObjects)
+		obj->Render(cmdList, pCamera);
 }

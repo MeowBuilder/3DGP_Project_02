@@ -302,7 +302,8 @@ void CObjectsShader::AnimateObjects(float fTimeElapsed)
 {
 	for (int j = 0; j < m_nObjects; j++)
 	{
-		m_ppObjects[j]->Animate(fTimeElapsed);
+		if (m_ppObjects[j]->GetActive())
+			m_ppObjects[j]->Animate(fTimeElapsed);
 	}
 }
 
@@ -321,9 +322,24 @@ void CObjectsShader::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera*
 	{
 		if (m_ppObjects[j])
 		{
-			m_ppObjects[j]->Render(pd3dCommandList, pCamera);
+			if (m_ppObjects[j]->GetActive())
+				m_ppObjects[j]->Render(pd3dCommandList, pCamera);
 		}
 	}
+}
+
+CGameObject* CObjectsShader::CheckFinish() {
+	for (int i = 0; i < m_nObjects; i++)
+	{
+		if (m_ppObjects[i]->GetActive() == false && m_ppObjects[i]->GetExplosive() != NULL)
+		{
+			if (m_ppObjects[i]->GetExplosive()->IsFinished())
+			{
+				return m_ppObjects[i];
+			}
+		}
+	}
+	return NULL;
 }
 
 CGameObject* CObjectsShader::PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition,
@@ -335,12 +351,14 @@ CGameObject* CObjectsShader::PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosit
 	CGameObject* pSelectedObject = NULL;
 	for (int j = 0; j < m_nObjects; j++)
 	{
-		nIntersected = m_ppObjects[j]->PickObjectByRayIntersection(xmf3PickPosition,
-			xmf4x4View, &fHitDistance);
-		if ((nIntersected > 0) && (fHitDistance < *pfNearHitDistance))
-		{
-			*pfNearHitDistance = fHitDistance;
-			pSelectedObject = m_ppObjects[j];
+		if (m_ppObjects[j]->GetActive()) {
+			nIntersected = m_ppObjects[j]->PickObjectByRayIntersection(xmf3PickPosition,
+				xmf4x4View, &fHitDistance);
+			if ((nIntersected > 0) && (fHitDistance < *pfNearHitDistance))
+			{
+				*pfNearHitDistance = fHitDistance;
+				pSelectedObject = m_ppObjects[j];
+			}
 		}
 	}
 	return(pSelectedObject);

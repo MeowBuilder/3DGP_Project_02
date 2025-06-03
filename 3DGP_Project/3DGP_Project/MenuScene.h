@@ -1,12 +1,12 @@
 #pragma once
 #include "Scene.h"
-#include "StartSceneShader.h"
+#include "MenuSceneShader.h"
 
-class CStartScene : public CScene
+class CMenuScene : public CScene
 {
 public:
-	CStartScene();
-	~CStartScene();
+	CMenuScene();
+	~CMenuScene();
 
 	virtual bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	virtual	bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
@@ -14,3 +14,4 @@ public:
 
 	virtual	void BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList);
 };
+
