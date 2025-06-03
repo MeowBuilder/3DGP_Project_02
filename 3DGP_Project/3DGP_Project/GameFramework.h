@@ -53,14 +53,6 @@ private:
 	HANDLE m_hFenceEvent;
 	//펜스 인터페이스 포인터, 펜스의 값, 이벤트 핸들
 
-	//카메라
-	CCamera* m_pCamera = NULL;
-
-	//플레이어
-	CPlayer* m_pPlayer = NULL;
-
-	//마지막으로 마우스 버튼을 클릭할 때의 마우스 커서의 위치이다. 
-	POINT m_ptOldCursorPos; 
 
 	//다음은 게임 프레임워크에서 사용할 타이머이다.
 	CGameTimer m_GameTimer;
@@ -69,8 +61,6 @@ private:
 	_TCHAR m_pszFrameRate[50];
 
 	CSceneManager* m_pSceneManager;
-
-	CGameObject* m_pSelectedObject = NULL;
 public:
 	CGameFramework();
 	~CGameFramework();

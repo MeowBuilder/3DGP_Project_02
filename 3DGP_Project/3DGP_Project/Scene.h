@@ -1,6 +1,7 @@
 #pragma once
 #include "Timer.h"
 #include "Shader.h"
+#include "Player.h"
 
 class CScene
 {
@@ -8,22 +9,22 @@ public:
 	CScene();
 	~CScene();
 
-	virtual bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
-	virtual	bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	virtual bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam, float fTimeElapsed);
+	virtual	bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam, float fTimeElapsed);
 
 	virtual	void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual	void ReleaseObjects();
 
-	virtual	bool ProcessInput(UCHAR* pKeysBuffer);
+	virtual	bool ProcessInput(HWND hWnd, float fTimeElapsed);
 	virtual	void AnimateObjects(float fTimeElapsed);
-	virtual	void Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera);
+	virtual	void Render(ID3D12GraphicsCommandList* pd3dCommandList);
 
 	virtual	void ReleaseUploadBuffers();
 
 	virtual	ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
 	virtual	ID3D12RootSignature *GetGraphicsRootSignature();
-
-	virtual	CGameObject* PickObjectPointedByCursor(int xClient, int yClient, CCamera* pCamera);
+	
+	virtual	void PickObjectPointedByCursor(int xClient, int yClient);
 
 	virtual bool IsFinished() const { return m_bSceneFinished; }
 	virtual void SetFinish(bool bFinish) { m_bSceneFinished = bFinish; }
@@ -37,6 +38,17 @@ protected:
 	bool m_bSceneFinished = false;
 
 	CGameObject* m_EndObject = NULL;
+
+	//카메라
+	CCamera* m_pCamera = NULL;
+
+	//플레이어
+	CPlayer* m_pPlayer = NULL;
+
+	CGameObject* m_pSelectedObject = NULL;
+
+	//마지막으로 마우스 버튼을 클릭할 때의 마우스 커서의 위치이다. 
+	POINT m_ptOldCursorPos;
 
 	ID3D12RootSignature *m_pd3dGraphicsRootSignature = NULL;
 };

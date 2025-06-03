@@ -45,9 +45,9 @@ void CSceneManager::AnimateObjects(float fElapsedTime, ID3D12Device* pd3dDevice,
     }
 }
 
-void CSceneManager::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera)
+void CSceneManager::Render(ID3D12GraphicsCommandList* pd3dCommandList)
 {
-    if (m_pCurrentScene) m_pCurrentScene->Render(pd3dCommandList,pCamera);
+    if (m_pCurrentScene) m_pCurrentScene->Render(pd3dCommandList);
 }
 
 void CSceneManager::ReleaseCurrentScene()
@@ -60,20 +60,20 @@ void CSceneManager::ReleaseCurrentScene()
     }
 }
 
-void CSceneManager::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+void CSceneManager::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam, float fTimeElapsed)
 {
     if (m_pCurrentScene)
-        m_pCurrentScene->OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam);
+        m_pCurrentScene->OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam, fTimeElapsed);
 }
 
-void CSceneManager::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
+void CSceneManager::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam, float fTimeElapsed)
 {
     if (m_pCurrentScene)
-        m_pCurrentScene->OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
+        m_pCurrentScene->OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam, fTimeElapsed);
 }
 
-CGameObject* CSceneManager::PickObjectPointedByCursor(int xClient, int yClient, CCamera* pCamera) {
-    return m_pCurrentScene->PickObjectPointedByCursor(xClient, yClient, pCamera);
+void CSceneManager::ProcessInput(HWND hWnd, float fTimeElapsed) {
+    m_pCurrentScene->ProcessInput(hWnd, fTimeElapsed);
 }
 
 ID3D12RootSignature* CSceneManager::GetGraphicsRootSignature() {

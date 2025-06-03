@@ -17,13 +17,12 @@ public:
     void ChangeScene(int nSceneID, ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList);
 
     void AnimateObjects(float fElapsedTime, ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList);
-    void Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera);
+    void Render(ID3D12GraphicsCommandList* pd3dCommandList);
     void ReleaseCurrentScene();
 
-    void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
-    void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
-
-    CGameObject* PickObjectPointedByCursor(int xClient, int yClient, CCamera* pCamera);
+    void OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam, float fTimeElapsed);
+    void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam, float fTimeElapsed);
+    void ProcessInput(HWND hWnd, float fTimeElapsed);
 
     ID3D12RootSignature* GetGraphicsRootSignature();
     void ReleaseUploadBuffers();

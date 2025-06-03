@@ -15,19 +15,9 @@ void CStartScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandLi
 	m_pShaders = new CStartSceneShader[m_nShaders];
 	m_pShaders[0].CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	m_pShaders[0].BuildObjects(pd3dDevice, pd3dCommandList);
-}
 
-bool CStartScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
-{
-	return(false);
-}
-
-bool CStartScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
-{
-	return(false);
-}
-
-bool CStartScene::ProcessInput(UCHAR* pKeysBuffer)
-{
-	return(false);
+	CAirplanePlayer* pAirplanePlayer = new CAirplanePlayer(pd3dDevice, pd3dCommandList, GetGraphicsRootSignature());
+	m_pPlayer = pAirplanePlayer;
+	m_pPlayer->SetPosition(XMFLOAT3(0, 0, 0));
+	m_pCamera = m_pPlayer->GetCamera();
 }

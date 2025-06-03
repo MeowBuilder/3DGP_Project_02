@@ -64,6 +64,11 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 	m_pShaders = new CObjectsShader[m_nShaders];
 	m_pShaders[0].CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	m_pShaders[0].BuildObjects(pd3dDevice, pd3dCommandList);
+
+	CAirplanePlayer* pAirplanePlayer = new CAirplanePlayer(pd3dDevice, pd3dCommandList, GetGraphicsRootSignature());
+	m_pPlayer = pAirplanePlayer;
+	m_pPlayer->SetPosition(XMFLOAT3(0, 0, 0));
+	m_pCamera = m_pPlayer->GetCamera();
 }
 
 void CScene::ReleaseObjects()
@@ -97,40 +102,123 @@ void CScene::AnimateObjects(float fTimeElapsed)
 	}
 }
 
-bool CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM
-	lParam)
+bool CScene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam, float fTimeElapsed)
 {
+	switch (nMessageID)
+	{
+	case WM_LBUTTONDOWN:
+	case WM_RBUTTONDOWN:
+		PickObjectPointedByCursor(LOWORD(lParam), HIWORD(lParam));
+		::SetCapture(hWnd);
+		::GetCursorPos(&m_ptOldCursorPos);
+		break;
+	case WM_LBUTTONUP:
+	case WM_RBUTTONUP:
+		::ReleaseCapture();
+		break;
+	case WM_MOUSEMOVE:
+		break;
+	default:
+		break;
+	}
 	return(false);
 }
 
-bool CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam,
-	LPARAM lParam)
+bool CScene::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam, float fTimeElapsed)
 {
+	switch (nMessageID)
+	{
+	case WM_KEYUP:
+		switch (wParam)
+		{
+		case VK_F1:
+		case VK_F2:
+		case VK_F3:
+			if (m_pPlayer) m_pCamera = m_pPlayer->ChangeCamera((wParam - VK_F1 + 1), fTimeElapsed);
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
+
 	return(false);
 }
 
-bool CScene::ProcessInput(UCHAR* pKeysBuffer)
+bool CScene::ProcessInput(HWND hWnd, float fTimeElapsed)
 {
+	static UCHAR pKeyBuffer[256];
+	DWORD dwDirection = 0;
+
+	if (::GetKeyboardState(pKeyBuffer))
+	{
+		if (pKeyBuffer[VK_UP] & 0xF0) dwDirection |= DIR_FORWARD;
+		if (pKeyBuffer[VK_DOWN] & 0xF0) dwDirection |= DIR_BACKWARD;
+		if (pKeyBuffer[VK_LEFT] & 0xF0) dwDirection |= DIR_LEFT;
+		if (pKeyBuffer[VK_RIGHT] & 0xF0) dwDirection |= DIR_RIGHT;
+		if (pKeyBuffer[VK_PRIOR] & 0xF0) dwDirection |= DIR_UP;
+		if (pKeyBuffer[VK_NEXT] & 0xF0) dwDirection |= DIR_DOWN;
+	}
+	float cxDelta = 0.0f, cyDelta = 0.0f;
+	POINT ptCursorPos;
+
+	if (::GetCapture() == hWnd)
+	{
+		//마우스 커서를 화면에서 없앤다(보이지 않게 한다).
+		::SetCursor(NULL);
+
+		//현재 마우스 커서의 위치를 가져온다. 
+		::GetCursorPos(&ptCursorPos);
+
+		//마우스 버튼이 눌린 상태에서 마우스가 움직인 양을 구한다. 
+		cxDelta = (float)(ptCursorPos.x - m_ptOldCursorPos.x) / 3.0f;
+		cyDelta = (float)(ptCursorPos.y - m_ptOldCursorPos.y) / 3.0f;
+
+		//마우스 커서의 위치를 마우스가 눌려졌던 위치로 설정한다. 
+		::SetCursorPos(m_ptOldCursorPos.x, m_ptOldCursorPos.y);
+	}
+
+	if ((dwDirection != 0) || (cxDelta != 0.0f) || (cyDelta != 0.0f))
+	{
+		if (cxDelta || cyDelta)
+		{
+			if (pKeyBuffer[VK_RBUTTON] & 0xF0)
+				m_pPlayer->Rotate(cyDelta, 0.0f, -cxDelta);
+			else
+				m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
+		}
+
+		if (dwDirection) m_pPlayer->Move(dwDirection, 100.0f * fTimeElapsed, true);
+	}
+
+	//플레이어를 실제로 이동하고 카메라를 갱신한다. 중력과 마찰력의 영향을 속도 벡터에 적용한다.
+	m_pPlayer->Update(fTimeElapsed);
+
 	return(false);
 }
 
-void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera)
+void CScene::Render(ID3D12GraphicsCommandList* pd3dCommandList)
 {
-	pCamera->SetViewportsAndScissorRects(pd3dCommandList);
+	m_pCamera->SetViewportsAndScissorRects(pd3dCommandList);
 	pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature);
-	pCamera->UpdateShaderVariables(pd3dCommandList);
+	m_pCamera->UpdateShaderVariables(pd3dCommandList);
 	for (int i = 0; i < m_nShaders; i++)
 	{
-		m_pShaders[i].Render(pd3dCommandList, pCamera);
+		m_pShaders[i].Render(pd3dCommandList, m_pCamera);
 	}
+
+	//3인칭 카메라일 때 플레이어를 렌더링한다. 
+	if (m_pPlayer) m_pPlayer->Render(pd3dCommandList, m_pCamera);
 }
 
-CGameObject* CScene::PickObjectPointedByCursor(int xClient, int yClient, CCamera* pCamera)
+void CScene::PickObjectPointedByCursor(int xClient, int yClient)
 {
-	if (!pCamera) return(NULL);
-	XMFLOAT4X4 xmf4x4View = pCamera->GetViewMatrix();
-	XMFLOAT4X4 xmf4x4Projection = pCamera->GetProjectionMatrix();
-	D3D12_VIEWPORT d3dViewport = pCamera->GetViewport();
+	if (!m_pCamera) return;
+	XMFLOAT4X4 xmf4x4View = m_pCamera->GetViewMatrix();
+	XMFLOAT4X4 xmf4x4Projection = m_pCamera->GetProjectionMatrix();
+	D3D12_VIEWPORT d3dViewport = m_pCamera->GetViewport();
 	XMFLOAT3 xmf3PickPosition;
 	xmf3PickPosition.x = (((2.0f * xClient) / d3dViewport.Width) - 1) / xmf4x4Projection._11;
 	xmf3PickPosition.y = -(((2.0f * yClient) / d3dViewport.Height) - 1) / xmf4x4Projection._22;
@@ -147,5 +235,11 @@ CGameObject* CScene::PickObjectPointedByCursor(int xClient, int yClient, CCamera
 			pNearestObject = pIntersectedObject;
 		}
 	}
-	return(pNearestObject);
+
+	m_pSelectedObject = pNearestObject;
+
+	if (m_pSelectedObject)
+	{
+		m_pSelectedObject->Explosion();
+	}
 }
