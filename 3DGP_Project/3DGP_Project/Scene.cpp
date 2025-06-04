@@ -65,7 +65,8 @@ void CScene::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* p
 	m_pShaders[0].CreateShader(pd3dDevice, m_pd3dGraphicsRootSignature);
 	m_pShaders[0].BuildObjects(pd3dDevice, pd3dCommandList);
 
-	CAirplanePlayer* pAirplanePlayer = new CAirplanePlayer(pd3dDevice, pd3dCommandList, GetGraphicsRootSignature());
+	CAirplanePlayer* pAirplanePlayer = new CAirplanePlayer();
+	pAirplanePlayer->Init(pd3dDevice, pd3dCommandList, GetGraphicsRootSignature());
 	m_pPlayer = pAirplanePlayer;
 	m_pPlayer->SetPosition(XMFLOAT3(0, 0, 0));
 	m_pCamera = m_pPlayer->GetCamera();
@@ -99,6 +100,11 @@ void CScene::AnimateObjects(float fTimeElapsed)
 			SetNextSceneID(m_EndObject->GetTargetSceneID());
 			SetFinish(true);
 		}
+	}
+
+	if (m_pPlayer) {
+		m_pPlayer->Animate(fTimeElapsed);
+		m_pPlayer->AutoFire(fTimeElapsed, m_pSelectedObject);
 	}
 }
 
@@ -190,7 +196,7 @@ bool CScene::ProcessInput(HWND hWnd, float fTimeElapsed)
 				m_pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
 		}
 
-		if (dwDirection) m_pPlayer->Move(dwDirection, 100.0f * fTimeElapsed, true);
+		if (dwDirection) m_pPlayer->Move(dwDirection, 100.0f * fTimeElapsed, false);
 	}
 
 	//플레이어를 실제로 이동하고 카메라를 갱신한다. 중력과 마찰력의 영향을 속도 벡터에 적용한다.

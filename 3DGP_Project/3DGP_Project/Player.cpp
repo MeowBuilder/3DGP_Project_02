@@ -50,25 +50,25 @@ void CPlayer::SetOrientation(const XMFLOAT3& right, const XMFLOAT3& up, const XM
 	m_xmf3Look = look;
 }
 
-void CPlayer::Move(DWORD dwDirection, float fDistance, bool bUpdateVelocity)
+void CPlayer::Move(ULONG nDirection, float fDistance, bool bVelocity)
 {
-	if (dwDirection)
+	if (nDirection)
 	{
 		XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
 		//화살표 키 ‘↑’를 누르면 로컬 z-축 방향으로 이동(전진)한다. ‘↓’를 누르면 반대 방향으로 이동한다. 
-		if (dwDirection & DIR_FORWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
-		if (dwDirection & DIR_BACKWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
+		if (nDirection & DIR_FORWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
+		if (nDirection & DIR_BACKWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
 
 		//화살표 키 ‘→’를 누르면 로컬 x-축 방향으로 이동한다. ‘←’를 누르면 반대 방향으로 이동한다. 
-		if (dwDirection & DIR_RIGHT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
-		if (dwDirection & DIR_LEFT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
+		if (nDirection & DIR_RIGHT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
+		if (nDirection & DIR_LEFT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
 
 		//‘Page Up’을 누르면 로컬 y-축 방향으로 이동한다. ‘Page Down’을 누르면 반대 방향으로 이동한다. 
-		if (dwDirection & DIR_UP) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, fDistance);
-		if (dwDirection & DIR_DOWN) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, -fDistance);
+		if (nDirection & DIR_UP) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, fDistance);
+		if (nDirection & DIR_DOWN) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, -fDistance);
 
 		//플레이어를 현재 위치 벡터에서 xmf3Shift 벡터만큼 이동한다.
-		Move(xmf3Shift, bUpdateVelocity);
+		Move(xmf3Shift, bVelocity);
 	}
 }
 
@@ -267,11 +267,9 @@ void CPlayer::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamer
 	}
 }
 
-CAirplanePlayer::CAirplanePlayer(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList
-	* pd3dCommandList, ID3D12RootSignature* pd3dGraphicsRootSignature)
-{
+void CAirplanePlayer::Init(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, ID3D12RootSignature* pd3dGraphicsRootSignature) {
 	//비행기 메쉬를 생성한다.
-	CMesh *pAirplaneMesh = new CAirplaneMeshDiffused(pd3dDevice, pd3dCommandList, 20.0f, 20.0f, 4.0f, XMFLOAT4(0.0f, 0.5f, 0.0f, 0.0f));
+	CMesh* pAirplaneMesh = new CAirplaneMeshDiffused(pd3dDevice, pd3dCommandList, 20.0f, 20.0f, 4.0f, XMFLOAT4(0.0f, 0.5f, 0.0f, 0.0f));
 	SetMesh(pAirplaneMesh);
 
 	//플레이어의 카메라를 스페이스-쉽 카메라로 변경(생성)한다.
@@ -281,7 +279,7 @@ CAirplanePlayer::CAirplanePlayer(ID3D12Device* pd3dDevice, ID3D12GraphicsCommand
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
 	//플레이어의 위치를 설정한다.
-	SetPosition(XMFLOAT3(0.0f, 0.0f, -50.0f));
+	SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 
 	//플레이어(비행기) 메쉬를 렌더링할 때 사용할 셰이더를 생성한다.
 	CPlayerShader* pShader = new CPlayerShader();
@@ -354,4 +352,177 @@ CCamera *CAirplanePlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed)
 	//플레이어를 시간의 경과에 따라 갱신(위치와 방향을 변경: 속도, 마찰력, 중력 등을 처리)한다. 
 	Update(fTimeElapsed);
 	return(m_pCamera);
+}
+
+void CTankPlayer::Init(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, ID3D12RootSignature* pd3dGraphicsRootSignature) {
+	m_pCamera = ChangeCamera(THIRD_PERSON_CAMERA, 0.0f);
+
+	//플레이어를 위한 셰이더 변수를 생성한다. 
+	CreateShaderVariables(pd3dDevice, pd3dCommandList);
+
+	//플레이어의 위치를 설정한다.
+	SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
+
+	//플레이어(비행기) 메쉬를 렌더링할 때 사용할 셰이더를 생성한다.
+	CPlayerShader* pShader = new CPlayerShader();
+	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
+	SetShader(pShader);
+
+	for (int i = 0; i < BULLETS; ++i)
+	{
+		m_ppBullets[i] = new CBulletObject(m_fBulletRange);
+		m_ppBullets[i]->SetActive(false);
+		m_ppBullets[i]->SetMesh(m_pBulletMesh);
+	}
+}
+
+CTankPlayer::~CTankPlayer()
+{
+	for (int i = 0; i < BULLETS; ++i)
+		if (m_ppBullets[i]) delete m_ppBullets[i];
+}
+
+void CTankPlayer::SetTankParts(CGameObject* pLower, CGameObject* pUpper, CGameObject* pBarrel)
+{
+	m_pLowerBody = pLower;
+	m_pUpperBody = pUpper;
+	m_pBarrel = pBarrel;
+}
+
+void CTankPlayer::Animate(float fElapsedTime)
+{
+	for (int i = 0; i < BULLETS; i++)
+		if (m_ppBullets[i]->GetActive()) m_ppBullets[i]->Animate(fElapsedTime);
+}
+
+void CTankPlayer::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera)
+{
+
+	if (m_pLowerBody) m_pLowerBody->Render(pd3dCommandList, pCamera);
+	if (m_pUpperBody) m_pUpperBody->Render(pd3dCommandList, pCamera);
+	if (m_pBarrel)    m_pBarrel->Render(pd3dCommandList, pCamera);
+
+	for (int i = 0; i < BULLETS; i++)
+		if (m_ppBullets[i]->GetActive()) m_ppBullets[i]->Render(pd3dCommandList, pCamera);
+}
+
+void CTankPlayer::RotateTurret(float fAngle)
+{
+	if (m_pUpperBody)
+		m_pUpperBody->Rotate(&m_xmf3Up, fAngle);
+}
+
+void CTankPlayer::RotateLower(float fAngle)
+{
+	if (m_pLowerBody)
+		m_pLowerBody->Rotate(&m_xmf3Up, fAngle);
+}
+
+void CTankPlayer::Rotate(float fPitch, float fYaw, float fRoll)
+{
+	CPlayer::Rotate(fPitch, fYaw, fRoll);
+
+	if (m_pUpperBody)
+	{
+		RotateTurret(fYaw);
+	}
+
+	if (m_pBarrel)
+	{
+		XMFLOAT3 center = m_pUpperBody->GetPosition();
+		XMFLOAT3 barrelPos = m_pBarrel->GetPosition();
+		XMFLOAT3 delta = Vector3::Subtract(barrelPos, center);
+		XMMATRIX rotY = XMMatrixRotationY(XMConvertToRadians(fYaw));
+		XMVECTOR vDelta = XMLoadFloat3(&delta);
+		vDelta = XMVector3TransformCoord(vDelta, rotY);
+		XMFLOAT3 rotatedDelta;
+		XMStoreFloat3(&rotatedDelta, vDelta);
+		XMFLOAT3 newPos = Vector3::Add(center, rotatedDelta);
+		m_pBarrel->SetPosition(newPos);
+
+		XMFLOAT3 look = Vector3::Normalize(Vector3::Subtract(newPos, center));
+		m_pBarrel->LookTo(look,m_xmf3Up);
+	}
+}
+
+void CTankPlayer::AutoFire(float fElapsedTime, CGameObject* pTarget)
+{
+	if (!m_bAutoFire) return;
+	m_fAutoFireElapsed += fElapsedTime;
+	if (m_fAutoFireElapsed >= m_fAutoFireInterval)
+	{
+		FireBullet(pTarget);
+		m_fAutoFireElapsed = 0.0f;
+	}
+}
+
+void CTankPlayer::FireBullet(CGameObject* pTarget)
+{
+	for (int i = 0; i < BULLETS; ++i)
+	{
+		if (!m_ppBullets[i]->GetActive())
+		{
+			XMFLOAT3 firePos = m_pBarrel->GetPosition();
+			firePos = Vector3::Add(firePos, Vector3::ScalarProduct(m_pBarrel->GetLook(),6.0f,false));
+			XMFLOAT3 direction = m_pBarrel ? m_pBarrel->GetLook() : GetLook();
+
+			m_ppBullets[i]->SetFirePosition(firePos);
+			m_ppBullets[i]->SetMovingDirection(direction);
+			m_ppBullets[i]->SetActive(true);
+			m_ppBullets[i]->m_pLockedObject = pTarget;
+
+			break;
+		}
+	}
+}
+
+void CTankPlayer::Move(ULONG nDirection, float fDistance, bool bVelocity)
+{
+	SetPrePosition(GetPosition());
+
+	if (nDirection)
+	{
+		XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
+		//화살표 키 ‘↑’를 누르면 로컬 z-축 방향으로 이동(전진)한다. ‘↓’를 누르면 반대 방향으로 이동한다. 
+		if (nDirection & DIR_FORWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_pLowerBody->GetLook(), fDistance);
+		if (nDirection & DIR_BACKWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_pLowerBody->GetLook(), -fDistance);
+
+		//화살표 키 ‘→’를 누르면 로컬 x-축 방향으로 이동한다. ‘←’를 누르면 반대 방향으로 이동한다. 
+		if (nDirection & DIR_RIGHT) RotateLower(fDistance);
+		if (nDirection & DIR_LEFT) RotateLower(-fDistance);
+
+		//플레이어를 현재 위치 벡터에서 xmf3Shift 벡터만큼 이동한다.
+		Move(xmf3Shift, bVelocity);
+		if (m_pLowerBody)
+		{
+			m_pLowerBody->Move(xmf3Shift, bVelocity);
+		}
+
+		if (m_pUpperBody)
+		{
+			m_pUpperBody->Move(xmf3Shift, bVelocity);
+		}
+
+		if (m_pBarrel)
+		{
+			m_pBarrel->Move(xmf3Shift, bVelocity);
+		}
+	}
+}
+
+void CTankPlayer::Move(const XMFLOAT3& xmf3Shift, bool bUpdateVelocity)
+{
+	//bUpdateVelocity가 참이면 플레이어를 이동하지 않고 속도 벡터를 변경한다. 
+	if (bUpdateVelocity)
+	{
+		//플레이어의 속도 벡터를 xmf3Shift 벡터만큼 변경한다. 
+		m_xmf3Velocity = Vector3::Add(m_xmf3Velocity, xmf3Shift);
+	}
+	else
+	{
+		//플레이어를 현재 위치 벡터에서 xmf3Shift 벡터만큼 이동한다.
+		m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Shift);
+		//플레이어의 위치가 변경되었으므로 카메라의 위치도 xmf3Shift 벡터만큼 이동한다. 
+		if (m_pCamera) m_pCamera->Move(xmf3Shift);
+	}
 }

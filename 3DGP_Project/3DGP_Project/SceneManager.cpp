@@ -28,7 +28,7 @@ void CSceneManager::ChangeScene(int nSceneID, ID3D12Device* pd3dDevice, ID3D12Gr
         SetCurrentScene(new CLevel1(), pd3dDevice, pd3dCommandList);
         break;
     case 3:
-        //SetCurrentScene(new CLevel2(), pd3dDevice, pd3dCommandList);
+        SetCurrentScene(new CLevel2(), pd3dDevice, pd3dCommandList);
         break;
     case 4:
         SetCurrentScene(new CScene(), pd3dDevice, pd3dCommandList);

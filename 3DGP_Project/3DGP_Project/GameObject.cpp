@@ -5,6 +5,7 @@ CGameObject::CGameObject()
 {
 	XMStoreFloat4x4(&m_xmf4x4World, XMMatrixIdentity());
 	XMStoreFloat4x4(&m_xmf4x4Transform, XMMatrixIdentity());
+	m_childExplosive = NULL;
 }
 
 CGameObject::~CGameObject()
@@ -196,6 +197,12 @@ void CGameObject::MoveForward(float fDistance)
 	CGameObject::SetPosition(xmf3Position);
 }
 
+void CGameObject::Move(const XMFLOAT3& xmf3Shift, bool bUpdateVelocity) {
+	XMFLOAT3 xmf3Position = GetPosition();
+	xmf3Position = Vector3::Add(xmf3Position, xmf3Shift);
+	CGameObject::SetPosition(xmf3Position);
+}
+
 //게임 객체를 주어진 각도로 회전한다. 
 void CGameObject::Rotate(float fPitch, float fYaw, float fRoll)
 {
@@ -211,6 +218,20 @@ bool CGameObject::IsVisible(CCamera* pCamera)
 	xmBoundingBox.Transform(xmBoundingBox, XMLoadFloat4x4(&m_xmf4x4World));
 	if (pCamera) bIsVisible = pCamera->IsInFrustum(xmBoundingBox);
 	return(bIsVisible);
+}
+
+bool CGameObject::CheckCollisionWith(CGameObject* pOther)
+{
+	if (!m_pMesh || !pOther->m_pMesh) return false;
+
+	BoundingOrientedBox obbA = m_pMesh->GetBoundingBox();
+	BoundingOrientedBox obbB = pOther->m_pMesh->GetBoundingBox();
+
+	BoundingOrientedBox obbAWorld, obbBWorld;
+	obbA.Transform(obbAWorld, XMLoadFloat4x4(&m_xmf4x4World));
+	obbB.Transform(obbBWorld, XMLoadFloat4x4(&pOther->m_xmf4x4World));
+
+	return obbAWorld.Intersects(obbBWorld);
 }
 
 void CGameObject::GenerateRayForPicking(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& 
@@ -335,4 +356,59 @@ void CExplosiveObject::Render(ID3D12GraphicsCommandList* cmdList, CCamera* pCame
 
 	for (auto& obj : m_DebrisObjects)
 		obj->Render(cmdList, pCamera);
+}
+
+CBulletObject::CBulletObject(float fRange)
+{
+	m_fRange = fRange;
+	m_bActive = false;
+}
+
+CBulletObject::~CBulletObject()
+{
+}
+
+void CBulletObject::SetFirePosition(const XMFLOAT3& pos)
+{
+	m_xmf3FirePosition = pos;
+	SetPosition(pos);
+	m_fTraveledDistance = 0.0f;
+}
+
+void CBulletObject::SetMovingDirection(XMFLOAT3& dir)
+{
+	m_xmf3Direction = Vector3::Normalize(dir);
+	LookTo(m_xmf3Direction,XMFLOAT3(0.0f,1.0f,0.0f));
+}
+
+void CBulletObject::Animate(float fElapsedTime)
+{
+	if (!m_bActive) return;
+
+	if (m_pLockedObject)
+	{
+		XMFLOAT3 xmf3Position = GetPosition();
+		XMVECTOR xmvPosition = XMLoadFloat3(&xmf3Position);
+
+		XMFLOAT3 xmf3LockedObjectPosition = m_pLockedObject->GetPosition();
+		XMVECTOR xmvLockedObjectPosition = XMLoadFloat3(&xmf3LockedObjectPosition);
+		XMVECTOR xmvToLockedObject = xmvLockedObjectPosition - xmvPosition;
+		xmvToLockedObject = XMVector3Normalize(xmvToLockedObject);
+
+		XMVECTOR xmvMovingDirection = XMLoadFloat3(&m_xmf3Direction);
+		xmvMovingDirection = XMVector3Normalize(XMVectorLerp(xmvMovingDirection, xmvToLockedObject, 0.25f));
+		XMStoreFloat3(&m_xmf3Direction, xmvMovingDirection);
+		LookTo(m_xmf3Direction, XMFLOAT3(0.0f, 1.0f, 0.0f));
+	}
+
+	float fDistance = m_fSpeed * fElapsedTime;
+	m_fTraveledDistance += fDistance;
+
+	if (m_fTraveledDistance >= m_fRange)
+	{
+		m_bActive = false;
+		return;
+	}
+
+	MoveForward(fDistance);
 }

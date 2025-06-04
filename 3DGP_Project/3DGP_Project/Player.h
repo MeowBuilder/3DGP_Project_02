@@ -44,6 +44,8 @@ protected:
 
 	//플레이어에 현재 설정된 카메라이다. 
 	CCamera *m_pCamera = NULL;
+
+	bool m_bAutoFire = false;
 public:
 	CPlayer();
 	virtual ~CPlayer();
@@ -56,7 +58,11 @@ public:
 	void SetMaxVelocityXZ(float fMaxVelocity) { m_fMaxVelocityXZ = fMaxVelocity; }
 	void SetMaxVelocityY(float fMaxVelocity) { m_fMaxVelocityY = fMaxVelocity; }
 	void SetVelocity(XMFLOAT3& xmf3Velocity) { m_xmf3Velocity = xmf3Velocity; }
-	
+
+	void ToggleAutoFire() { m_bAutoFire = !m_bAutoFire; }
+
+	virtual void AutoFire(float fElapsedTime, CGameObject* pTarget) {};
+
 	void SetPosition(XMFLOAT3& xmf3Position) {
 		Move(XMFLOAT3(xmf3Position.x - m_xmf3Position.x, xmf3Position.y - m_xmf3Position.y, xmf3Position.z - m_xmf3Position.z), false);
 	}
@@ -72,12 +78,12 @@ public:
 	void SetCamera(CCamera* pCamera) { m_pCamera = pCamera; }
 
 	//플레이어를 이동하는 함수이다. 
-	void Move(ULONG nDirection, float fDistance, bool bVelocity = false);
-	void Move(const XMFLOAT3& xmf3Shift, bool bVelocity = false);
+	virtual void Move(ULONG nDirection, float fDistance, bool bVelocity = false);
+	virtual void Move(const XMFLOAT3& xmf3Shift, bool bVelocity = false);
 	void Move(float fxOffset = 0.0f, float fyOffset = 0.0f, float fzOffset = 0.0f);
 
 	//플레이어를 회전하는 함수이다.
-	void Rotate(float x, float y, float z);
+	virtual void Rotate(float x, float y, float z);
 
 	//플레이어의 위치와 회전 정보를 경과 시간에 따라 갱신하는 함수이다. 
 	void Update(float fTimeElapsed);
@@ -108,9 +114,62 @@ public:
 class CAirplanePlayer : public CPlayer
 {
 public:
-	CAirplanePlayer(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList,
-		ID3D12RootSignature* pd3dGraphicsRootSignature);
+	CAirplanePlayer() {};
 	virtual ~CAirplanePlayer();
+
+	virtual void Init(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, ID3D12RootSignature* pd3dGraphicsRootSignature);
+
 	virtual CCamera* ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed);
 	virtual void OnPrepareRender();
+};
+
+#define BULLETS 16
+
+class CTankPlayer : public CAirplanePlayer
+{
+protected:
+	CGameObject* m_pLowerBody = nullptr;   // 하부
+	CGameObject* m_pUpperBody = nullptr;   // 포탑
+	CGameObject* m_pBarrel = nullptr;   // 포신
+
+	CCubeMeshDiffused* m_pBulletMesh;
+	CBulletObject* m_ppBullets[BULLETS];
+	float m_fBulletRange = 1500.0f;
+
+	float m_fAutoFireElapsed = 0.0f;
+	float m_fAutoFireInterval = 1.0f;
+	bool m_bShield = false;
+
+public:
+	CTankPlayer() {};
+	virtual ~CTankPlayer();
+
+	virtual void Init(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, ID3D12RootSignature* pd3dGraphicsRootSignature);
+
+	virtual void Rotate(float fPitch, float fYaw, float fRoll) override;
+
+	virtual void Animate(float fElapsedTime) override;
+	virtual void Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera) override;
+
+	void SetBulletMesh(CCubeMeshDiffused* pMesh) { m_pBulletMesh = pMesh; }
+
+	void SetTankParts(CGameObject* pLower, CGameObject* pUpper, CGameObject* pBarrel);
+	void RotateTurret(float fAngle);
+	void RotateLower(float fAngle);
+
+	void FireBullet(CGameObject* pTarget);
+	virtual void AutoFire(float fElapsedTime, CGameObject* pTarget);
+
+	std::vector<CBulletObject*> GetBullets() {
+		std::vector<CBulletObject*> bullets;
+		for (int i = 0; i < BULLETS; ++i)
+			bullets.push_back(m_ppBullets[i]);
+		return bullets;
+	}
+
+	void ToggleShield() { m_bShield = !m_bShield; }
+	bool GetShield() const { return m_bShield; }
+
+	virtual void Move(ULONG nDirection, float fDistance, bool bVelocity = false);
+	virtual void Move(const XMFLOAT3& xmf3Shift, bool bVelocity = false);
 };

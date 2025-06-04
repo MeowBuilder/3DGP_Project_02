@@ -79,7 +79,7 @@ public:
 	virtual CGameObject* PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float* pfNearHitDistance);
 	virtual CGameObject* CheckFinish();
 	virtual  bool RailEnded() { return m_bRailEnded; }
-
+	virtual void SetTextOn() {};
 	virtual XMFLOAT3 GetStartPosition() {
 		return XMFLOAT3(0.0f, 0.0f, 0.0f);
 	}
