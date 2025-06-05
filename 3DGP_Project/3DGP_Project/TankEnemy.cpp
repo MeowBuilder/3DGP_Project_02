@@ -146,3 +146,18 @@ void CTankEnemy::SetTankParts(CGameObject* pLower, CGameObject* pUpper, CGameObj
     m_pUpperBody = pUpper;
     m_pBarrel = pBarrel;
 }
+
+// 여기 만들어야 함 ㄹㅇㄹㅇ 오버라이드 해라
+bool CGameObject::CheckCollisionWith(CGameObject* pOther)
+{
+    if (!m_pMesh || !pOther->m_pMesh) return false;
+
+    BoundingOrientedBox obbA = m_pMesh->GetBoundingBox();
+    BoundingOrientedBox obbB = pOther->m_pMesh->GetBoundingBox();
+
+    BoundingOrientedBox obbAWorld, obbBWorld;
+    obbA.Transform(obbAWorld, XMLoadFloat4x4(&m_xmf4x4World));
+    obbB.Transform(obbBWorld, XMLoadFloat4x4(&pOther->m_xmf4x4World));
+
+    return obbAWorld.Intersects(obbBWorld);
+}
