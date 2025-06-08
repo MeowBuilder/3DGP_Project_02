@@ -76,10 +76,6 @@ void CSceneManager::ProcessInput(HWND hWnd, float fTimeElapsed) {
     m_pCurrentScene->ProcessInput(hWnd, fTimeElapsed);
 }
 
-ID3D12RootSignature* CSceneManager::GetGraphicsRootSignature() {
-    return m_pCurrentScene->GetGraphicsRootSignature();
-}
-
 void CSceneManager::ReleaseUploadBuffers() {
     m_pCurrentScene->ReleaseUploadBuffers();
 }

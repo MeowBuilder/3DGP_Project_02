@@ -10,6 +10,7 @@
 // Windows 헤더 파일
 #include <windows.h>
 #include <timeapi.h>
+
 // C 런타임 헤더 파일입니다.
 #include <stdlib.h>
 #include <malloc.h>
@@ -39,21 +40,17 @@ using namespace DirectX;
 using namespace DirectX::PackedVector;
 
 
-
 // 링커 추가
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "winmm.lib")
-
-
 #pragma comment(lib, "dxguid.lib")
 
 // 클라이언트 크기 설정
 #define FRAME_BUFFER_WIDTH		800
 #define FRAME_BUFFER_HEIGHT		600
 
-/*정점의 색상을 무작위로(Random) 설정하기 위해 사용한다. 각 정점의 색상은 난수(Random Number)를 생성하여 지정한다.*/
 #define RANDOM_COLOR XMFLOAT4(rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX))
 
 

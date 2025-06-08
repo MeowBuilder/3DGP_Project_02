@@ -16,7 +16,6 @@ CMesh::~CMesh()
 
 void CMesh::ReleaseUploadBuffers()
 {
-	//정점 버퍼를 위한 업로드 버퍼를 소멸시킨다.
 	if (m_pd3dVertexUploadBuffer) m_pd3dVertexUploadBuffer->Release();
 	m_pd3dVertexUploadBuffer = NULL;
 	
@@ -42,7 +41,6 @@ void CMesh::Render(ID3D12GraphicsCommandList* pd3dCommandList, UINT nInstances)
 void CMesh::Render(ID3D12GraphicsCommandList* pd3dCommandList, UINT nInstances,
 	D3D12_VERTEX_BUFFER_VIEW d3dInstancingBufferView)
 {
-	//정점 버퍼 뷰와 인스턴싱 버퍼 뷰를 입력-조립 단계에 설정한다. 
 	D3D12_VERTEX_BUFFER_VIEW pVertexBufferViews[] = { m_d3dVertexBufferView, d3dInstancingBufferView };
 	pd3dCommandList->IASetVertexBuffers(m_nSlot, _countof(pVertexBufferViews), pVertexBufferViews);
 	Render(pd3dCommandList, nInstances);
@@ -92,14 +90,12 @@ int CMesh::CheckRayIntersection(XMFLOAT3& xmf3RayOrigin, XMFLOAT3& xmf3RayDirect
 
 CCubeMeshDiffused::CCubeMeshDiffused(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList, float fWidth, float fHeight, float fDepth) : CMesh(pd3dDevice, pd3dCommandList)
 {
-	//직육면체는 꼭지점(정점)이 8개이다. 
 	m_nVertices = 8;
 	m_nStride = sizeof(CDiffusedVertex);
 	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 	float fx = fWidth * 0.5f, fy = fHeight * 0.5f, fz = fDepth * 0.5f;
 
-	//정점 버퍼는 직육면체의 꼭지점 8개에 대한 정점 데이터를 가진다. 
 	m_pVertices = new CDiffusedVertex[m_nVertices];
 	m_pVertices[0] = CDiffusedVertex(XMFLOAT3(-fx, +fy, -fz), RANDOM_COLOR);
 	m_pVertices[1] = CDiffusedVertex(XMFLOAT3(+fx, +fy, -fz), RANDOM_COLOR);
@@ -145,12 +141,10 @@ CCubeMeshDiffused::CCubeMeshDiffused(ID3D12Device* pd3dDevice, ID3D12GraphicsCom
 	//ⓛ 옆면(Right) 사각형의 아래쪽 삼각형
 	m_pnIndices[33] = 7; m_pnIndices[34] = 4; m_pnIndices[35] = 6;
 
-	//인덱스 버퍼를 생성한다. 
 	m_pd3dIndexBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_pnIndices,
 	sizeof(UINT)* m_nIndices, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER,
 		& m_pd3dIndexUploadBuffer);
 
-	//인덱스 버퍼 뷰를 생성한다. 
 	m_d3dIndexBufferView.BufferLocation = m_pd3dIndexBuffer->GetGPUVirtualAddress();
 	m_d3dIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
 	m_d3dIndexBufferView.SizeInBytes = sizeof(UINT) * m_nIndices;
@@ -173,7 +167,6 @@ CAirplaneMeshDiffused::CAirplaneMeshDiffused(ID3D12Device* pd3dDevice,
 	m_nSlot = 0;
 	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	float fx = fWidth * 0.5f, fy = fHeight * 0.5f, fz = fDepth * 0.5f;
-	//위의 그림과 같은 비행기 메쉬를 표현하기 위한 정점 데이터이다. 
 	m_pVertices = new CDiffusedVertex[m_nVertices];
 	float x1 = fx * 0.2f, y1 = fy * 0.2f, x2 = fx * 0.1f, y3 = fy * 0.3f, y2 = ((y1 - (fy -
 		y3)) / x1) * x2 + (fy - y3);

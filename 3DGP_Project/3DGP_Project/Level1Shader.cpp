@@ -37,7 +37,6 @@ void CLevel1Shader::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* 
 void CLevel1Shader::BuildRailSegments() {
     std::vector<XMFLOAT3> m_ControlPoints;
 
-    // 기준 점 설정
     m_ControlPoints.push_back(XMFLOAT3(100.0f, 0.0f, 0.0f));
     m_ControlPoints.push_back(XMFLOAT3(0.0f, 0.0f, 100.0f));
     m_ControlPoints.push_back(XMFLOAT3(-100.0f, 0.0f, 0.0f));
@@ -113,7 +112,6 @@ void CLevel1Shader::AnimatePlayerOnRail(CPlayer* pPlayer,float fTimeElapsed) {
     const RailSegment& seg0 = m_RailSegments[m_nCurrentRailIndex];
     const RailSegment& seg1 = m_RailSegments[(m_nCurrentRailIndex + 1) % m_RailSegments.size()];
 
-    // 1. 플레이어 위치 보간
     XMFLOAT3 pos = Vector3::Lerp(seg0.position, seg1.position, m_fRailProgress);
     pPlayer->SetPosition(pos);
 

@@ -18,10 +18,11 @@ public:
 
 	virtual void SetTextOn();
 
-	void CheckObjectCollision(CPlayer* pPlayer);
+	virtual void CheckObjectCollision(CPlayer* pPlayer);
 
 	CGameObject* PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition, XMFLOAT4X4& xmf4x4View, float* pfNearHitDistance);
 
 	void ExplodeEnemy(CGameObject* pEnemy);
 	void ExplodePlayer(CPlayer* pPlayer);
+	bool CheckClear();
 };

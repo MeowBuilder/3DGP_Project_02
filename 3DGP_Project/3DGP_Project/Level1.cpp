@@ -32,8 +32,40 @@ void CLevel1::AnimateObjects(float fTimeElapsed) {
 
 		if (m_pShaders[i].RailEnded())
 		{
-			SetNextSceneID(0);
+			SetNextSceneID(3);
 			SetFinish(true);
 		}
 	}
+}
+
+bool CLevel1::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam, float fTimeElapsed)
+{
+	switch (nMessageID)
+	{
+	case WM_KEYUP:
+		switch (wParam)
+		{
+		case VK_ESCAPE:
+			SetNextSceneID(1);
+			SetFinish(true);
+			break;
+		case VK_F1:
+		case VK_F2:
+		case VK_F3:
+			if (m_pPlayer) m_pCamera = m_pPlayer->ChangeCamera((wParam - VK_F1 + 1), fTimeElapsed);
+			break;
+		case 'n':
+		case 'N':
+			SetNextSceneID(3);
+			SetFinish(true);
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return(false);
 }

@@ -21,6 +21,7 @@ CGameObject::~CGameObject()
 void CGameObject::Explosion() {
 	if (m_childExplosive)
 	{
+		m_childExplosive->SetPosition(GetPosition());
 		m_childExplosive->StartExplosion();
 		m_bActive = false;
 	}
@@ -47,7 +48,6 @@ void CGameObject::SetMesh(CMesh* pMesh)
 
 void CGameObject::ReleaseUploadBuffers()
 {
-	//정점 버퍼를 위한 업로드 버퍼를 소멸시킨다. 
 	if (m_pMesh) m_pMesh->ReleaseUploadBuffers();
 }
 
@@ -111,7 +111,6 @@ void CGameObject::UpdateShaderVariables(ID3D12GraphicsCommandList* pd3dCommandLi
 	XMFLOAT4X4 xmf4x4World;
 	XMStoreFloat4x4(&xmf4x4World, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
 
-	//객체의 월드 변환 행렬을 루트 상수(32-비트 값)를 통하여 셰이더 변수(상수 버퍼)로 복사한다. 
 	pd3dCommandList->SetGraphicsRoot32BitConstants(0, 16, &xmf4x4World, 0);
 }
 
@@ -149,28 +148,24 @@ XMFLOAT3 CGameObject::GetPosition()
 	return(XMFLOAT3(m_xmf4x4World._41, m_xmf4x4World._42, m_xmf4x4World._43));
 }
 
-//게임 객체의 로컬 z-축 벡터를 반환한다. 
 XMFLOAT3 CGameObject::GetLook()
 {
 	return(Vector3::Normalize(XMFLOAT3(m_xmf4x4World._31, m_xmf4x4World._32,
 		m_xmf4x4World._33)));
 }
 
-//게임 객체의 로컬 y-축 벡터를 반환한다. 
 XMFLOAT3 CGameObject::GetUp()
 {
 	return(Vector3::Normalize(XMFLOAT3(m_xmf4x4World._21, m_xmf4x4World._22,
 		m_xmf4x4World._23)));
 }
 
-//게임 객체의 로컬 x-축 벡터를 반환한다. 
 XMFLOAT3 CGameObject::GetRight()
 {
 	return(Vector3::Normalize(XMFLOAT3(m_xmf4x4World._11, m_xmf4x4World._12,
 		m_xmf4x4World._13)));
 }
 
-//게임 객체를 로컬 x-축 방향으로 이동한다. 
 void CGameObject::MoveStrafe(float fDistance)
 {
 	XMFLOAT3 xmf3Position = GetPosition();
@@ -179,7 +174,6 @@ void CGameObject::MoveStrafe(float fDistance)
 	CGameObject::SetPosition(xmf3Position);
 }
 
-//게임 객체를 로컬 y-축 방향으로 이동한다. 
 void CGameObject::MoveUp(float fDistance)
 {
 	XMFLOAT3 xmf3Position = GetPosition();
@@ -188,7 +182,6 @@ void CGameObject::MoveUp(float fDistance)
 	CGameObject::SetPosition(xmf3Position);
 }
 
-//게임 객체를 로컬 z-축 방향으로 이동한다. 
 void CGameObject::MoveForward(float fDistance)
 {
 	XMFLOAT3 xmf3Position = GetPosition();
@@ -203,7 +196,6 @@ void CGameObject::Move(const XMFLOAT3& xmf3Shift, bool bUpdateVelocity) {
 	CGameObject::SetPosition(xmf3Position);
 }
 
-//게임 객체를 주어진 각도로 회전한다. 
 void CGameObject::Rotate(float fPitch, float fYaw, float fRoll)
 {
 	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(fPitch), XMConvertToRadians(fYaw), XMConvertToRadians(fRoll));
@@ -222,14 +214,14 @@ bool CGameObject::IsVisible(CCamera* pCamera)
 
 bool CGameObject::CheckCollisionWith(CGameObject* pOther)
 {
-	if (!m_pMesh || !pOther->m_pMesh) return false;
+	if (!m_pMesh || !pOther->GetMesh()) return false;
 
 	BoundingOrientedBox obbA = m_pMesh->GetBoundingBox();
-	BoundingOrientedBox obbB = pOther->m_pMesh->GetBoundingBox();
+	BoundingOrientedBox obbB = pOther->GetMesh()->GetBoundingBox();
 
 	BoundingOrientedBox obbAWorld, obbBWorld;
 	obbA.Transform(obbAWorld, XMLoadFloat4x4(&m_xmf4x4World));
-	obbB.Transform(obbBWorld, XMLoadFloat4x4(&pOther->m_xmf4x4World));
+	obbB.Transform(obbBWorld, XMLoadFloat4x4(&pOther->GetWorldMAT()));
 
 	return obbAWorld.Intersects(obbBWorld);
 }
@@ -309,17 +301,16 @@ CExplosiveObject::~CExplosiveObject()
 
 void CExplosiveObject::Init(CGameObject* pFromObject)
 {
-	XMFLOAT3 origin = pFromObject->GetPosition();
-	for (int i = 0; i < EXPLOSION_DEBRIS; ++i)
-	{
-		m_DebrisObjects[i]->SetPosition(origin);
-	}
 	m_fElapsedTime = 0.0f;
 	m_bBlowingUp = false;
 }
 
 void CExplosiveObject::StartExplosion()
 {
+	for (int i = 0; i < EXPLOSION_DEBRIS; ++i)
+	{
+		m_DebrisObjects[i]->SetPosition(GetPosition());
+	}
 	m_fElapsedTime = 0.0f;
 	m_bBlowingUp = true;
 }
@@ -411,4 +402,18 @@ void CBulletObject::Animate(float fElapsedTime)
 	}
 
 	MoveForward(fDistance);
+}
+
+bool CBulletObject::CheckCollisionWith(CGameObject* pOther)
+{
+	if (!m_pMesh || !pOther->GetMesh()) return false;
+
+	BoundingOrientedBox obbA = m_pMesh->GetBoundingBox();
+	BoundingOrientedBox obbB = pOther->GetMesh()->GetBoundingBox();
+
+	BoundingOrientedBox obbAWorld, obbBWorld;
+	obbA.Transform(obbAWorld, XMLoadFloat4x4(&m_xmf4x4World));
+	obbB.Transform(obbBWorld, XMLoadFloat4x4(&pOther->GetWorldMAT()));
+
+	return obbAWorld.Intersects(obbBWorld);
 }

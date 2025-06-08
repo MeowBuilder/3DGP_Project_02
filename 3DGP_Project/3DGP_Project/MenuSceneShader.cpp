@@ -9,7 +9,6 @@ void CMenuSceneShader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsComm
 
 	float textZpos = 100.0f;
 
-	// TUTORIAL (가장 위 중앙)
 	CTextObject* pText1 = new CTextObject(L"TUTORIAL", pCubeMesh);
 	pText1->SetPosition(0.0f,30.0f, textZpos);
 	pText1->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 0.0f));
@@ -17,7 +16,6 @@ void CMenuSceneShader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsComm
 	pText1->SetTargetSceneID(4);
 	m_ppObjects[0] = pText1;
 
-	// LEVEL-1 (왼쪽 아래)
 	CTextObject* pText2 = new CTextObject(L"LEVEL-1", pCubeMesh);
 	pText2->SetPosition(-40.0f, 5.0f, textZpos);
 	pText2->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 0.0f));
@@ -25,7 +23,6 @@ void CMenuSceneShader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsComm
 	pText2->SetTargetSceneID(2);
 	m_ppObjects[1] = pText2;
 
-	// LEVEL-2 (오른쪽 아래)
 	CTextObject* pText3 = new CTextObject(L"LEVEL-2", pCubeMesh);
 	pText3->SetPosition(40.0f, 5.0f, textZpos);
 	pText3->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 0.0f));
@@ -33,7 +30,6 @@ void CMenuSceneShader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsComm
 	pText3->SetTargetSceneID(3);
 	m_ppObjects[2] = pText3;
 
-	// START (왼쪽 맨 아래)
 	CTextObject* pText4 = new CTextObject(L"START", pCubeMesh);
 	pText4->SetPosition(-40.0f, -20.0f, textZpos);
 	pText4->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 0.0f));
@@ -41,7 +37,6 @@ void CMenuSceneShader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsComm
 	pText4->SetTargetSceneID(2);
 	m_ppObjects[3] = pText4;
 
-	// END (오른쪽 맨 아래)
 	CTextObject* pText5 = new CTextObject(L"END", pCubeMesh);
 	pText5->SetPosition(40.0f, -20.0f, textZpos);
 	pText5->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 0.0f));

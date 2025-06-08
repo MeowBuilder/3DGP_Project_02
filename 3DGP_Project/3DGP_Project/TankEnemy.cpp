@@ -30,7 +30,6 @@ void CTankEnemy::Animate(float fElapsedTime)
         m_fRandomMoveTime = 1.0f + ((float)(rand() % 200) / 100.0f);
     }
 
-    // 회전
     if (fabs(m_fRotationAngle) > 0.0f)
     {
         float rotateSpeed = 90.0f;
@@ -48,10 +47,8 @@ void CTankEnemy::Animate(float fElapsedTime)
         }
     }
 
-    // 이동
     MoveForward(m_iMoveDirection * 5.0f * fElapsedTime);
 
-    // 하부
     if (m_pLowerBody)
     {
         m_pLowerBody->Animate(fElapsedTime, m_xmf4x4World);
@@ -62,7 +59,6 @@ void CTankEnemy::Animate(float fElapsedTime)
         m_pUpperBody->Animate(fElapsedTime, m_pLowerBody->GetWorldMAT());
     }
 
-    // 포신
     if (m_pBarrel)
     {
         m_pBarrel->Animate(fElapsedTime, m_pUpperBody->GetWorldMAT());
@@ -78,13 +74,11 @@ void CTankEnemy::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCa
         m_pUpperBody->Render(pd3dCommandList, pCamera);
     }
 
-    // 하부
     if (m_pLowerBody)
     {
         m_pLowerBody->Render(pd3dCommandList, pCamera);
     }
 
-    // 포신
     if (m_pBarrel)
     {
         m_pBarrel->Render(pd3dCommandList, pCamera);
@@ -98,7 +92,6 @@ int CTankEnemy::PickObjectByRayIntersection(XMFLOAT3& pickPosition, XMFLOAT4X4& 
 
     float fHitDistance = FLT_MAX;
 
-    // 포탑 우선 검사
     if (m_pUpperBody)
     {
         if (m_pUpperBody->PickObjectByRayIntersection(pickPosition, viewMatrix, &fHitDistance))
@@ -108,7 +101,6 @@ int CTankEnemy::PickObjectByRayIntersection(XMFLOAT3& pickPosition, XMFLOAT4X4& 
         }
     }
 
-    // 하부
     if (m_pLowerBody)
     {
         if (m_pLowerBody->PickObjectByRayIntersection(pickPosition, viewMatrix, &fHitDistance))
@@ -121,7 +113,6 @@ int CTankEnemy::PickObjectByRayIntersection(XMFLOAT3& pickPosition, XMFLOAT4X4& 
         }
     }
 
-    // 포신
     if (m_pBarrel)
     {
         if (m_pBarrel->PickObjectByRayIntersection(pickPosition, viewMatrix, &fHitDistance))
@@ -147,17 +138,24 @@ void CTankEnemy::SetTankParts(CGameObject* pLower, CGameObject* pUpper, CGameObj
     m_pBarrel = pBarrel;
 }
 
-// 여기 만들어야 함 ㄹㅇㄹㅇ 오버라이드 해라
-bool CGameObject::CheckCollisionWith(CGameObject* pOther)
+bool CTankEnemy::CheckCollisionWith(CGameObject* pOther)
 {
-    if (!m_pMesh || !pOther->m_pMesh) return false;
+    bool Check = false;
 
-    BoundingOrientedBox obbA = m_pMesh->GetBoundingBox();
-    BoundingOrientedBox obbB = pOther->m_pMesh->GetBoundingBox();
+    if (m_pUpperBody)
+    {
+        Check = Check || m_pUpperBody->CheckCollisionWith(pOther);
+    }
 
-    BoundingOrientedBox obbAWorld, obbBWorld;
-    obbA.Transform(obbAWorld, XMLoadFloat4x4(&m_xmf4x4World));
-    obbB.Transform(obbBWorld, XMLoadFloat4x4(&pOther->m_xmf4x4World));
+    if (m_pLowerBody)
+    {
+        Check = Check || m_pLowerBody->CheckCollisionWith(pOther);
+    }
 
-    return obbAWorld.Intersects(obbBWorld);
+    if (m_pBarrel)
+    {
+        Check = Check || m_pBarrel->CheckCollisionWith(pOther);
+    }
+
+    return Check;
 }

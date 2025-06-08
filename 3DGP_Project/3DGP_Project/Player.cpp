@@ -55,45 +55,35 @@ void CPlayer::Move(ULONG nDirection, float fDistance, bool bVelocity)
 	if (nDirection)
 	{
 		XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
-		//화살표 키 ‘↑’를 누르면 로컬 z-축 방향으로 이동(전진)한다. ‘↓’를 누르면 반대 방향으로 이동한다. 
 		if (nDirection & DIR_FORWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, fDistance);
 		if (nDirection & DIR_BACKWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Look, -fDistance);
 
-		//화살표 키 ‘→’를 누르면 로컬 x-축 방향으로 이동한다. ‘←’를 누르면 반대 방향으로 이동한다. 
 		if (nDirection & DIR_RIGHT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, fDistance);
 		if (nDirection & DIR_LEFT) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Right, -fDistance);
 
-		//‘Page Up’을 누르면 로컬 y-축 방향으로 이동한다. ‘Page Down’을 누르면 반대 방향으로 이동한다. 
 		if (nDirection & DIR_UP) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, fDistance);
 		if (nDirection & DIR_DOWN) xmf3Shift = Vector3::Add(xmf3Shift, m_xmf3Up, -fDistance);
 
-		//플레이어를 현재 위치 벡터에서 xmf3Shift 벡터만큼 이동한다.
 		Move(xmf3Shift, bVelocity);
 	}
 }
 
 void CPlayer::Move(const XMFLOAT3& xmf3Shift, bool bUpdateVelocity)
 {
-	//bUpdateVelocity가 참이면 플레이어를 이동하지 않고 속도 벡터를 변경한다. 
 	if (bUpdateVelocity)
 	{
-		//플레이어의 속도 벡터를 xmf3Shift 벡터만큼 변경한다. 
 		m_xmf3Velocity = Vector3::Add(m_xmf3Velocity, xmf3Shift);
 	}
 	else
 	{
-		//플레이어를 현재 위치 벡터에서 xmf3Shift 벡터만큼 이동한다.
 		m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Shift);
-		//플레이어의 위치가 변경되었으므로 카메라의 위치도 xmf3Shift 벡터만큼 이동한다. 
 		if (m_pCamera) m_pCamera->Move(xmf3Shift);
 	}
 }
 
-//플레이어를 로컬 x-축, y-축, z-축을 중심으로 회전한다. 
 void CPlayer::Rotate(float x, float y, float z)
 {
 	DWORD nCameraMode = m_pCamera->GetMode();
-	//1인칭 카메라 또는 3인칭 카메라의 경우 플레이어의 회전은 약간의 제약이 따른다. 
 	if ((nCameraMode == FIRST_PERSON_CAMERA) || (nCameraMode == THIRD_PERSON_CAMERA))
 	{
 		if (x != 0.0f)
@@ -104,7 +94,6 @@ void CPlayer::Rotate(float x, float y, float z)
 		}
 		if (y != 0.0f)
 		{
-			//로컬 y-축을 중심으로 회전하는 것은 몸통을 돌리는 것이므로 회전 각도의 제한이 없다.
 			m_fYaw += y;
 			if (m_fYaw > 360.0f) m_fYaw -= 360.0f;
 			if (m_fYaw < 0.0f) m_fYaw += 360.0f;
@@ -115,7 +104,6 @@ void CPlayer::Rotate(float x, float y, float z)
 			if (m_fRoll > +20.0f) { z -= (m_fRoll - 20.0f); m_fRoll = +20.0f; }
 			if (m_fRoll < -20.0f) { z -= (m_fRoll + 20.0f); m_fRoll = -20.0f; }
 		}
-		//카메라를 x, y, z 만큼 회전한다. 플레이어를 회전하면 카메라가 회전하게 된다. 
 		m_pCamera->Rotate(x, y, z);
 
 		if (y != 0.0f)
@@ -156,7 +144,6 @@ void CPlayer::Rotate(float x, float y, float z)
 	m_xmf3Up = Vector3::CrossProduct(m_xmf3Look, m_xmf3Right, true);
 }
 
-//이 함수는 매 프레임마다 호출된다. 플레이어의 속도 벡터에 중력과 마찰력 등을 적용한다. 
 void CPlayer::Update(float fTimeElapsed)
 {
 	m_xmf3Velocity = Vector3::Add(m_xmf3Velocity, Vector3::ScalarProduct(m_xmf3Gravity, fTimeElapsed, false));
@@ -172,23 +159,18 @@ void CPlayer::Update(float fTimeElapsed)
 	fLength = sqrtf(m_xmf3Velocity.y * m_xmf3Velocity.y);
 	if (fLength > m_fMaxVelocityY) m_xmf3Velocity.y *= (fMaxVelocityY / fLength);
 
-	//플레이어를 속도 벡터 만큼 실제로 이동한다(카메라도 이동될 것이다).
 	XMFLOAT3 xmf3Velocity = Vector3::ScalarProduct(m_xmf3Velocity, fTimeElapsed, false);
 	Move(xmf3Velocity, false);
 
 	if (m_pPlayerUpdatedContext) OnPlayerUpdateCallback(fTimeElapsed);
 	DWORD nCameraMode = m_pCamera->GetMode();
 
-	//플레이어의 위치가 변경되었으므로 3인칭 카메라를 갱신한다. 
 	if (nCameraMode == THIRD_PERSON_CAMERA) m_pCamera->Update(m_xmf3Position, fTimeElapsed);
 
-	//카메라의 위치가 변경될 때 추가로 수행할 작업을 수행한다.
 	if (m_pCameraUpdatedContext) OnCameraUpdateCallback(fTimeElapsed);
 
-	//카메라가 3인칭 카메라이면 카메라가 변경된 플레이어 위치를 바라보도록 한다. 
 	if (nCameraMode == THIRD_PERSON_CAMERA) m_pCamera->SetLookAt(m_xmf3Position);
 
-	//카메라의 카메라 변환 행렬을 다시 생성한다.
 	m_pCamera->RegenerateViewMatrix();
 
 	fLength = Vector3::Length(m_xmf3Velocity);
@@ -199,7 +181,6 @@ void CPlayer::Update(float fTimeElapsed)
 
 CCamera* CPlayer::OnChangeCamera(DWORD nNewCameraMode, DWORD nCurrentCameraMode)
 {
-	//새로운 카메라의 모드에 따라 카메라를 새로 생성한다. 
 	CCamera *pNewCamera = NULL;
 	switch (nNewCameraMode)
 	{
@@ -259,7 +240,6 @@ void CPlayer::OnPrepareRender()
 void CPlayer::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera)
 {
 	DWORD nCameraMode = (pCamera) ? pCamera->GetMode() : 0x00;
-	//카메라 모드가 3인칭이면 플레이어 객체를 렌더링한다.
 	if (nCameraMode == THIRD_PERSON_CAMERA)
 	{
 		if (m_pShader) m_pShader->Render(pd3dCommandList, pCamera);
@@ -268,20 +248,15 @@ void CPlayer::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamer
 }
 
 void CAirplanePlayer::Init(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, ID3D12RootSignature* pd3dGraphicsRootSignature) {
-	//비행기 메쉬를 생성한다.
 	CMesh* pAirplaneMesh = new CAirplaneMeshDiffused(pd3dDevice, pd3dCommandList, 20.0f, 20.0f, 4.0f, XMFLOAT4(0.0f, 0.5f, 0.0f, 0.0f));
 	SetMesh(pAirplaneMesh);
 
-	//플레이어의 카메라를 스페이스-쉽 카메라로 변경(생성)한다.
 	m_pCamera = ChangeCamera(SPACESHIP_CAMERA, 0.0f);
 
-	//플레이어를 위한 셰이더 변수를 생성한다. 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	//플레이어의 위치를 설정한다.
 	SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 
-	//플레이어(비행기) 메쉬를 렌더링할 때 사용할 셰이더를 생성한다.
 	CPlayerShader* pShader = new CPlayerShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	SetShader(pShader);
@@ -305,7 +280,6 @@ CCamera *CAirplanePlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed)
 	switch (nNewCameraMode)
 	{
 	case FIRST_PERSON_CAMERA:
-		//플레이어의 특성을 1인칭 카메라 모드에 맞게 변경한다. 중력은 적용하지 않는다. 
 		SetFriction(200.0f);
 		SetGravity(XMFLOAT3(0.0f, 0.0f, 0.0f));
 		SetMaxVelocityXZ(125.0f);
@@ -318,7 +292,6 @@ CCamera *CAirplanePlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed)
 		m_pCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 		break;
 	case SPACESHIP_CAMERA:
-		//플레이어의 특성을 스페이스-쉽 카메라 모드에 맞게 변경한다. 중력은 적용하지 않는다.
 		SetFriction(125.0f);
 		SetGravity(XMFLOAT3(0.0f, 0.0f, 0.0f));
 		SetMaxVelocityXZ(400.0f);
@@ -331,13 +304,11 @@ CCamera *CAirplanePlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed)
 		m_pCamera->SetScissorRect(0, 0, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 		break;
 	case THIRD_PERSON_CAMERA:
-		//플레이어의 특성을 3인칭 카메라 모드에 맞게 변경한다. 지연 효과와 카메라 오프셋을 설정한다.
 		SetFriction(250.0f);
 		SetGravity(XMFLOAT3(0.0f, 0.0f, 0.0f));
 		SetMaxVelocityXZ(125.0f);
 		SetMaxVelocityY(400.0f);
 		m_pCamera = OnChangeCamera(THIRD_PERSON_CAMERA, nCurrentCameraMode);
-		//3인칭 카메라의 지연 효과를 설정한다. 값을 0.25f 대신에 0.0f와 1.0f로 설정한 결과를 비교하기 바란다.
 		m_pCamera->SetTimeLag(0.25f);
 		m_pCamera->SetOffset(XMFLOAT3(0.0f, 20.0f, -50.0f));
 		m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
@@ -349,7 +320,6 @@ CCamera *CAirplanePlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed)
 	}
 	m_pCamera->SetPosition(Vector3::Add(m_xmf3Position, m_pCamera->GetOffset()));
 
-	//플레이어를 시간의 경과에 따라 갱신(위치와 방향을 변경: 속도, 마찰력, 중력 등을 처리)한다. 
 	Update(fTimeElapsed);
 	return(m_pCamera);
 }
@@ -357,13 +327,10 @@ CCamera *CAirplanePlayer::ChangeCamera(DWORD nNewCameraMode, float fTimeElapsed)
 void CTankPlayer::Init(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList, ID3D12RootSignature* pd3dGraphicsRootSignature) {
 	m_pCamera = ChangeCamera(THIRD_PERSON_CAMERA, 0.0f);
 
-	//플레이어를 위한 셰이더 변수를 생성한다. 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 
-	//플레이어의 위치를 설정한다.
 	SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
 
-	//플레이어(비행기) 메쉬를 렌더링할 때 사용할 셰이더를 생성한다.
 	CPlayerShader* pShader = new CPlayerShader();
 	pShader->CreateShader(pd3dDevice, pd3dGraphicsRootSignature);
 	SetShader(pShader);
@@ -483,15 +450,12 @@ void CTankPlayer::Move(ULONG nDirection, float fDistance, bool bVelocity)
 	if (nDirection)
 	{
 		XMFLOAT3 xmf3Shift = XMFLOAT3(0, 0, 0);
-		//화살표 키 ‘↑’를 누르면 로컬 z-축 방향으로 이동(전진)한다. ‘↓’를 누르면 반대 방향으로 이동한다. 
 		if (nDirection & DIR_FORWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_pLowerBody->GetLook(), fDistance);
 		if (nDirection & DIR_BACKWARD) xmf3Shift = Vector3::Add(xmf3Shift, m_pLowerBody->GetLook(), -fDistance);
 
-		//화살표 키 ‘→’를 누르면 로컬 x-축 방향으로 이동한다. ‘←’를 누르면 반대 방향으로 이동한다. 
 		if (nDirection & DIR_RIGHT) RotateLower(fDistance);
 		if (nDirection & DIR_LEFT) RotateLower(-fDistance);
 
-		//플레이어를 현재 위치 벡터에서 xmf3Shift 벡터만큼 이동한다.
 		Move(xmf3Shift, bVelocity);
 		if (m_pLowerBody)
 		{
@@ -512,17 +476,81 @@ void CTankPlayer::Move(ULONG nDirection, float fDistance, bool bVelocity)
 
 void CTankPlayer::Move(const XMFLOAT3& xmf3Shift, bool bUpdateVelocity)
 {
-	//bUpdateVelocity가 참이면 플레이어를 이동하지 않고 속도 벡터를 변경한다. 
 	if (bUpdateVelocity)
 	{
-		//플레이어의 속도 벡터를 xmf3Shift 벡터만큼 변경한다. 
 		m_xmf3Velocity = Vector3::Add(m_xmf3Velocity, xmf3Shift);
 	}
 	else
 	{
-		//플레이어를 현재 위치 벡터에서 xmf3Shift 벡터만큼 이동한다.
 		m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Shift);
-		//플레이어의 위치가 변경되었으므로 카메라의 위치도 xmf3Shift 벡터만큼 이동한다. 
 		if (m_pCamera) m_pCamera->Move(xmf3Shift);
 	}
+}
+
+bool CTankPlayer::CheckCollisionWith(CGameObject* pOther)
+{
+	bool Check = false;
+
+	if (m_pUpperBody)
+	{
+		Check = Check || pOther->CheckCollisionWith(m_pUpperBody);
+	}
+
+	if (m_pLowerBody)
+	{
+		Check = Check || pOther->CheckCollisionWith(m_pLowerBody);
+	}
+
+	if (m_pBarrel)
+	{
+		Check = Check || pOther->CheckCollisionWith(m_pBarrel);
+	}
+
+	return Check;
+}
+
+bool CTankPlayer::CheckCollisionWith(CTankEnemy* pEnemy) {
+	bool Check = false;
+
+	if (m_pUpperBody)
+	{
+		Check = Check || pEnemy->CheckCollisionWith(m_pUpperBody);
+	}
+
+	if (m_pLowerBody)
+	{
+		Check = Check || pEnemy->CheckCollisionWith(m_pLowerBody);
+	}
+
+	if (m_pBarrel)
+	{
+		Check = Check || pEnemy->CheckCollisionWith(m_pBarrel);
+	}
+
+	return Check;
+}
+
+void CTankPlayer::SetPosition(XMFLOAT3& xmf3Position) {
+	Move(Vector3::Subtract(xmf3Position, m_xmf3Position), false);
+
+	if (m_pLowerBody)
+		m_pLowerBody->SetPosition(xmf3Position);
+
+	XMFLOAT3 upperOffset = XMFLOAT3(0.0f, 2.0f, 0.0f);
+	XMFLOAT3 barrelOffset = XMFLOAT3(0.0f, 2.0f, 6.0f);
+
+	XMMATRIX xmRotation = XMMatrixIdentity();
+	xmRotation.r[0] = XMLoadFloat3(&m_xmf3Right);
+	xmRotation.r[1] = XMLoadFloat3(&m_xmf3Up);
+	xmRotation.r[2] = XMLoadFloat3(&m_xmf3Look);
+
+	XMVECTOR vUpperOffset = XMVector3TransformCoord(XMLoadFloat3(&upperOffset), xmRotation);
+	XMVECTOR vBarrelOffset = XMVector3TransformCoord(XMLoadFloat3(&barrelOffset), xmRotation);
+
+	XMFLOAT3 upperPos, barrelPos;
+	XMStoreFloat3(&upperPos, XMVectorAdd(XMLoadFloat3(&xmf3Position), vUpperOffset));
+	XMStoreFloat3(&barrelPos, XMVectorAdd(XMLoadFloat3(&xmf3Position), vBarrelOffset));
+
+	if (m_pUpperBody) m_pUpperBody->SetPosition(upperPos);
+	if (m_pBarrel) m_pBarrel->SetPosition(barrelPos);
 }

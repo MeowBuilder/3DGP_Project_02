@@ -39,15 +39,12 @@ protected:
 
 	CGameObject* m_EndObject = NULL;
 
-	//카메라
 	CCamera* m_pCamera = NULL;
 
-	//플레이어
 	CPlayer* m_pPlayer = NULL;
 
 	CGameObject* m_pSelectedObject = NULL;
 
-	//마지막으로 마우스 버튼을 클릭할 때의 마우스 커서의 위치이다. 
 	POINT m_ptOldCursorPos;
 
 	ID3D12RootSignature *m_pd3dGraphicsRootSignature = NULL;

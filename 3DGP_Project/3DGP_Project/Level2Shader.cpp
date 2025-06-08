@@ -3,7 +3,7 @@
 void CLevel2Shader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommandList* pd3dCommandList)
 {
     CCubeMeshDiffused* pCubeMesh = new CCubeMeshDiffused(pd3dDevice, pd3dCommandList, 1.0f, 1.0f, 1.0f);
-    CCubeMeshDiffused* pExplosionMesh = new CCubeMeshDiffused(pd3dDevice, pd3dCommandList, 0.5f, 0.5f, 0.5f);
+    CCubeMeshDiffused* pExplosionMesh = new CCubeMeshDiffused(pd3dDevice, pd3dCommandList, 0.75f, 0.75f, 0.75f);
     m_nObjects = 1;
     m_ppObjects = new CGameObject * [m_nObjects];
 
@@ -11,7 +11,7 @@ void CLevel2Shader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommand
 
     CTextObject* TextObject = NULL;
     TextObject = new CTextObject(L"YOU WIN!", pCubeMesh);
-    TextObject->SetPosition(0.0f, 50.0f, 0.0f);
+    TextObject->SetPosition(0.0f, 10.0f, 0.0f);
     TextObject->SetRotationAxis(XMFLOAT3(0.0f, 1.0f, 0.0f));
     TextObject->SetRotationSpeed(10.0f);
     TextObject->SetActive(false);
@@ -25,12 +25,10 @@ void CLevel2Shader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommand
 
     for (int i = 0; i < 10; ++i)
     {
-        // 1. 메쉬 생성
         auto* pLowerMesh = new CCubeMeshDiffused(pd3dDevice, pd3dCommandList, 8.0f, fBottomHeight, 12.0f);
         auto* pUpperMesh = new CCubeMeshDiffused(pd3dDevice, pd3dCommandList, 6.0f, fUpperHeight, 6.0f);
         auto* pBarrelMesh = new CCubeMeshDiffused(pd3dDevice, pd3dCommandList, 1.0f, 1.0f, 6.0f);
 
-        // 2. 하위 오브젝트 구성
         CGameObject* pLowerBody = new CGameObject();
         pLowerBody->SetMesh(pLowerMesh);
 
@@ -42,11 +40,9 @@ void CLevel2Shader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommand
         pBarrel->SetMesh(pBarrelMesh);
         pBarrel->SetOffset(0, 0, fUpperWidth);
 
-        // 3. 적 탱크 생성
         CTankEnemy* pEnemy = new CTankEnemy();
         pEnemy->SetTankParts(pLowerBody, pUpperBody, pBarrel);
 
-        // 4. 위치 및 회전
         float x = (rand() % 501) - 250;
         float z = (rand() % 501) - 250;
         pEnemy->SetPosition(XMFLOAT3(x, 0.0f, z));
@@ -59,9 +55,47 @@ void CLevel2Shader::BuildObjects(ID3D12Device* pd3dDevice, ID3D12GraphicsCommand
         m_pExplosive.push_back(ExplosiveObject);
         pEnemy->SetExplosive(ExplosiveObject);
 
-        // 5. 등록
         m_pEnemies.push_back(pEnemy);
+    }
 
+    const int nObstacles = 20;
+    const float obstacleSize = 10.0f;
+    const float halfSize = obstacleSize * 0.5f;
+
+    CCubeMeshDiffused* pObstacleMesh = new CCubeMeshDiffused(pd3dDevice, pd3dCommandList, obstacleSize, obstacleSize, obstacleSize);
+
+    for (int i = 0; i < nObstacles; )
+    {
+        CGameObject* pObstacle = new CGameObject();
+        pObstacle->SetMesh(pObstacleMesh);
+
+        bool bValid = false;
+
+        while (!bValid)
+        {
+            float x = static_cast<float>((rand() % 501) - 250);
+            float z = static_cast<float>((rand() % 501) - 250);
+
+            if (x >= -5.0f && x <= 5.0f && z >= -5.0f && z <= 5.0f)
+                continue;
+
+            XMFLOAT3 pos = XMFLOAT3(x, halfSize, z);
+            pObstacle->SetPosition(pos);
+
+            bValid = true;
+
+            for (auto& pEnemy : m_pEnemies)
+            {
+                if (pObstacle->CheckCollisionWith(pEnemy))
+                {
+                    bValid = false;
+                    break;
+                }
+            }
+        }
+
+        m_pObstacles.push_back(pObstacle);
+        ++i;
     }
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
@@ -80,6 +114,9 @@ void CLevel2Shader::AnimateObjects(float fTimeElapsed) {
 
     for (auto& pExplosive : m_pExplosive)
         pExplosive->Animate(fTimeElapsed);
+
+    for (auto& pObstacles : m_pObstacles)
+        pObstacles->Animate(fTimeElapsed);
 }
 
 void CLevel2Shader::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* pCamera) {
@@ -98,6 +135,9 @@ void CLevel2Shader::Render(ID3D12GraphicsCommandList* pd3dCommandList, CCamera* 
 
     for (auto& pExplosive : m_pExplosive)
         pExplosive->Render(pd3dCommandList, pCamera);
+
+    for (auto& pObstacles : m_pObstacles)
+        pObstacles->Render(pd3dCommandList, pCamera);
 }
 
 CGameObject* CLevel2Shader::PickObjectByRayIntersection(XMFLOAT3& xmf3PickPosition,
@@ -123,6 +163,21 @@ CGameObject* CLevel2Shader::PickObjectByRayIntersection(XMFLOAT3& xmf3PickPositi
     return(pSelectedObject);
 }
 
+bool CLevel2Shader::CheckClear() {
+    bool Clear = true;
+    
+    for (auto& pEnemy : m_pEnemies)
+    {
+        if (pEnemy->GetActive())
+        {
+            Clear = false;
+            return Clear;
+        }
+    }
+
+    return Clear;
+}
+
 void CLevel2Shader::SetTextOn() {
     m_ppObjects[0]->SetActive(true);
 }
@@ -140,28 +195,30 @@ void CLevel2Shader::CheckObjectCollision(CPlayer* pPlayer)
 {
     if (!pPlayer) return;
 
-    // === [1] 적과 총알 충돌 ===
     auto bullets = static_cast<CTankPlayer*>(pPlayer)->GetBullets();
-    for (auto& pEnemy : m_pEnemies)
+    for (auto& pBullet : bullets)
     {
-        if (!pEnemy->GetActive()) continue;
+        if (!pBullet->GetActive()) continue;
 
-        for (auto& pBullet : bullets)
+        for (auto& pEnemy : m_pEnemies)
         {
-            if (pBullet->GetActive() && pBullet->CheckCollisionWith(pEnemy))
+            if (pEnemy->GetActive() && pEnemy->CheckCollisionWith(pBullet))
             {
                 pBullet->SetActive(false);
-                ExplodeEnemy(pEnemy); // 적 폭발 처리
+                pEnemy->Explosion();
+                if (CheckClear())
+                {
+                    SetTextOn();
+                }
             }
         }
     }
 
-    // === [2] 적과 플레이어 충돌 ===
     for (auto& pEnemy : m_pEnemies)
     {
         if (!pEnemy->GetActive()) continue;
 
-        if (pPlayer->CheckCollisionWith(pEnemy))
+        if (static_cast<CTankPlayer*>(pPlayer)->CheckCollisionWith(pEnemy))
         {
             if (static_cast<CTankPlayer*>(pPlayer)->GetShield()) {
                 ExplodeEnemy(pEnemy);
@@ -172,7 +229,6 @@ void CLevel2Shader::CheckObjectCollision(CPlayer* pPlayer)
         }
     }
 
-    // === [3] 장애물과 플레이어 충돌 ===
     for (auto& pObstacle : m_pObstacles)
     {
         if (!pObstacle->GetActive()) continue;
@@ -183,7 +239,6 @@ void CLevel2Shader::CheckObjectCollision(CPlayer* pPlayer)
         }
     }
 
-    // === [4] 장애물과 적 충돌 ===
     for (auto& pEnemy : m_pEnemies)
     {
         if (!pEnemy->GetActive()) continue;
@@ -199,7 +254,6 @@ void CLevel2Shader::CheckObjectCollision(CPlayer* pPlayer)
         }
     }
 
-    // === [5] 장애물과 총알 충돌 ===
     for (auto& pObstacle : m_pObstacles)
     {
         if (!pObstacle->GetActive()) continue;

@@ -17,6 +17,8 @@ public:
     virtual int PickObjectByRayIntersection(XMFLOAT3& pickPosition, XMFLOAT4X4& viewMatrix, float* pfHitDistance) override;
 
     void SetTankParts(CGameObject* pLower, CGameObject* pUpper, CGameObject* pBarrel);
+
+    virtual bool CheckCollisionWith(CGameObject* pOther);
 protected:
     CGameObject* m_pLowerBody = nullptr;   // 하부
     CGameObject* m_pUpperBody = nullptr;   // 포탑

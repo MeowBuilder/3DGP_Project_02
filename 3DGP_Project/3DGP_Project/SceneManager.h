@@ -26,9 +26,7 @@ public:
     void OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam, float fTimeElapsed);
     void ProcessInput(HWND hWnd, float fTimeElapsed);
 
-    ID3D12RootSignature* GetGraphicsRootSignature();
     void ReleaseUploadBuffers();
 
     bool IsFinished();
 };
-
